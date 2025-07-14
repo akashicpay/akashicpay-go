@@ -187,8 +187,8 @@ func getTransfersQueryParams(params IGetTransactions, identity string) string {
 	if params.Status != "" {
 		values = append(values, "status="+string(params.Status))
 	}
-	if params.Type != "" {
-		values = append(values, "type="+string(params.Type))
+	if params.TransactionType != "" {
+		values = append(values, "transactionType="+string(params.TransactionType))
 	}
 	if params.HideSmallTransactions {
 		values = append(values, "hideSmallTransactions=true")

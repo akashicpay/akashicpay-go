@@ -100,7 +100,7 @@ type IGetTransactions struct {
 	EndDate               time.Time
 	Layer                 TransactionLayer
 	Status                TransactionStatus
-	Type                  TransactionType
+	TransactionType       TransactionType
 	HideSmallTransactions bool
 }
 

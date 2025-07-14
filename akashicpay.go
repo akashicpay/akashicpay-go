@@ -249,6 +249,10 @@ func (ap *AkashicPay) LookForL2Address(aliasOrL1OrL2Address string, network Netw
 }
 
 func (ap *AkashicPay) GetTransfers(getTransactionParams IGetTransactions) ([]ITransaction, error) {
+	validLimits := map[int]bool{0: true, 10: true, 25: true, 50: true, 100: true}
+	if !validLimits[getTransactionParams.Limit] {
+		return nil, errors.New("limit must be one of 10, 25, 50, or 100")
+	}
 	return getTransfers(ap.AkashicUrl, ap.Otk.Identity, getTransactionParams)
 }
 
