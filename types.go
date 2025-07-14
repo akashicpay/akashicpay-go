@@ -140,13 +140,21 @@ type ICreateDepositOrderResponse struct {
 }
 
 type ICreateDepositOrder struct {
-	Identity       string           `json:"identity"`
-	Expires        int64            `json:"expires"`
-	ReferenceId    string           `json:"referenceId"`
-	Identifier     string           `json:"identifier"`
-	ToAddress      string           `json:"toAddress,omitempty"`
-	CoinSymbol     NetworkSymbol    `json:"coinSymbol,omitempty"`
-	TokenSymbol    TokenSymbol      `json:"tokenSymbol,omitempty"`
-	RequestedValue *IRequestedValue `json:"requestedValue,omitempty"`
-	Signature      string           `json:"signature,omitempty"`
+	Identity         string           `json:"identity"`
+	Expires          int64            `json:"expires"`
+	ReferenceId      string           `json:"referenceId"`
+	Identifier       string           `json:"identifier"`
+	ToAddress        string           `json:"toAddress,omitempty"`
+	CoinSymbol       NetworkSymbol    `json:"coinSymbol,omitempty"`
+	TokenSymbol      TokenSymbol      `json:"tokenSymbol,omitempty"`
+	RequestedValue   *IRequestedValue `json:"requestedValue,omitempty"`
+	Signature        string           `json:"signature,omitempty"`
+	MarkupPercentage float64          `json:"markupPercentage,omitempty"`
+}
+type IKeyByOwnerAndIdentifierResponse struct {
+	CoinSymbol NetworkSymbol `json:"coinSymbol,omitempty"`
+	Address    string        `json:"address,omitempty"`
+}
+type KeyResponseWrapper struct {
+	Data []IKeyByOwnerAndIdentifierResponse `json:"data"`
 }

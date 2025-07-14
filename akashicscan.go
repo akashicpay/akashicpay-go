@@ -225,3 +225,14 @@ func createDepositOrder(baseUrl string, payload ICreateDepositOrder) (ICreateDep
 	url := fmt.Sprintf("%v%v", baseUrl, CreateDepositOrderEndpoint)
 	return Post[ICreateDepositOrderResponse](url, payload)
 }
+
+/**
+ * Get all keys by BP and identifier
+ */
+func getKeysByOwnerAndIdentifier(
+	baseUrl string,
+	identifier string,
+) (KeyResponseWrapper, error) {
+	url := fmt.Sprintf("%v%v?identifier=%v", baseUrl, AllKeysOfIdentifierEndpoint, identifier)
+	return Get[KeyResponseWrapper](url)
+}
