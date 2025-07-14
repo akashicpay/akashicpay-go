@@ -1,0 +1,61 @@
+package akashicpay
+
+import "fmt"
+
+// AkashicScan Responses
+type IsBpResponse struct {
+	IsBp   bool `json:"isBp"`
+	IsFxBp bool `json:"isFxBp"`
+}
+
+type IOwnerBalancesResponse struct {
+	CoinSymbol  NetworkSymbol `json:"coinSymbol"`
+	Amount      string        `json:"balance"`
+	TokenSymbol TokenSymbol   `json:"tokenSymbol"`
+}
+
+type IOwnerDetailsResponse struct {
+	TotalBalances          []IOwnerBalancesResponse `json:"totalBalances"`
+	PendingDepositBalances []IOwnerBalancesResponse `json:"pendingDepositBalances"`
+	PendingSendBalances    []IOwnerBalancesResponse `json:"pendingSendBalances"`
+	OwnerIdentity          string                   `json:"ownerIdentity"`
+	TransactionCount       int                      `json:"transactionCount"`
+	IsFxBp                 bool                     `json:"isFxBp"`
+}
+
+// Akashic Endpoints
+const (
+	IsBpEndpoint                = "/v0/owner/is-bp"
+	PrepareTxEndpoint           = "/v0/l1-txn-orchestrator/prepare-withdrawal"
+	L2LookupEndpoint            = "/v0/nft/look-for-l2-address"
+	OwnerTransactionEndpoint    = "/v0/owner/transactions"
+	OwnerBalanceEndpoint        = "/v0/owner/details"
+	TransactionsDetailsEndpoint = "/v0/transactions/transfer"
+	IdentifierLookupEndpoint    = "/v0/key/bp-deposit-key"
+	AllKeysOfIdentifierEndpoint = "/v0/key/all-bp-deposit-keys"
+	SupportedCurrenciesEndpoint = "/v1/config/supported-currencies"
+	CreateDepositOrderEndpoint  = "/v0/deposit-request"
+	OwnerKeysEndpoint           = "/v0/owner/keys?address"
+	PrepareL2TxnEndpoint        = "/v0/l2-txn-orchestrator/prepare-l2-withdrawal"
+	ExchangeRatesEndpoint       = "/v0/exchange-rate"
+)
+
+func getIsBp(baseUrl string, l2Address string) (IsBpResponse, error) {
+	url := fmt.Sprintf("%v%v?address=%v",
+		baseUrl,
+		IsBpEndpoint,
+		l2Address,
+	)
+	isBp, err := Get[IsBpResponse](url)
+	return isBp, err
+}
+
+func getBalance(baseUrl string, l2Address string) (IOwnerDetailsResponse, error) {
+	url := fmt.Sprintf("%v%v?address=%v",
+		baseUrl,
+		OwnerBalanceEndpoint,
+		l2Address,
+	)
+	ownerDetails, err := Get[IOwnerDetailsResponse](url)
+	return ownerDetails, err
+}
