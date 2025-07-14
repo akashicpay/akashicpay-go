@@ -1,4 +1,4 @@
-module gitlab.com/dreamsai/cpg-2/akashicpay-go.git
+module github.com/akashicpay/akashicpay-go.git
 
 go 1.24.4
 
