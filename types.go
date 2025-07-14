@@ -131,6 +131,3 @@ type iKeyByOwnerAndIdentifierResponse struct {
 	CoinSymbol NetworkSymbol `json:"coinSymbol,omitempty"`
 	Address    string        `json:"address,omitempty"`
 }
-type KeyResponseWrapper struct {
-	Data []iKeyByOwnerAndIdentifierResponse `json:"data"`
-}
