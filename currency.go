@@ -24,14 +24,13 @@ func ConvertToSmallestUnit(amount string, coinSymbol NetworkSymbol, tokenSymbol 
 	p.Exp(big.NewInt(10), big.NewInt(int64(conversionFactor)), nil)
 
 	var pFloat *big.Float = big.NewFloat(0).SetInt(p)
+	pFloat.SetPrec(100)
 
 	floatAmount.Mul(floatAmount, pFloat)
 
-	if !floatAmount.IsInt() {
-		return "", errors.New("transaction is too small or has too many decimals")
-	}
+	smallestUnit, _ := floatAmount.Int(nil)
 
-	return floatAmount.Text('f', 0), nil
+	return smallestUnit.Text(10), nil
 }
 
 func getConversionFactor(coinSymbol NetworkSymbol, tokenSymbol TokenSymbol) (int, error) {
