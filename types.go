@@ -115,6 +115,7 @@ type IDepositAddress struct {
 	ExchangeRate      string
 	Amount            string
 	Expires           string
+	MarkupPercentage  float64
 }
 
 type IGetByOwnerAndIdentifierResponse struct {
@@ -137,6 +138,7 @@ type ICreateDepositOrderResponse struct {
 	Amount            string        `json:"amount,omitempty"`
 	ExchangeRate      string        `json:"exchangeRate,omitempty"`
 	Expires           string        `json:"expires"`
+	MarkupPercentage  float64       `json:"markupPercentage,omitempty"`
 }
 
 type ICreateDepositOrder struct {

@@ -35,6 +35,11 @@ func Get[T any](url string) (T, error) {
 	if err != nil {
 		return result, err
 	}
+	err = checkResponseForErrors(response)
+
+	if err != nil {
+		return result, err
+	}
 
 	defer response.Body.Close()
 	body, err := io.ReadAll(response.Body)

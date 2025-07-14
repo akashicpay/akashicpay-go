@@ -229,11 +229,11 @@ func (ap *AkashicPay) GetDepositUrl(identifier string, referenceId string, recei
 }
 
 func (ap *AkashicPay) GetDepositAddress(network NetworkSymbol, identifier string, referenceId string) (IDepositAddress, error) {
-	return ap.getDepositAddressFunc(network, identifier, referenceId, "", "", "")
+	return ap.getDepositAddressFunc(network, identifier, referenceId, "", "", "", 0)
 }
 
-func (ap *AkashicPay) GetDepositAddressWithRequestedValue(network NetworkSymbol, identifier string, referenceId string, requestedCurrency Currency, requestedAmount string, token TokenSymbol) (IDepositAddress, error) {
-	return ap.getDepositAddressFunc(network, identifier, referenceId, token, requestedCurrency, requestedAmount)
+func (ap *AkashicPay) GetDepositAddressWithRequestedValue(network NetworkSymbol, identifier string, referenceId string, requestedCurrency Currency, requestedAmount string, token TokenSymbol, markupPercentage float64) (IDepositAddress, error) {
+	return ap.getDepositAddressFunc(network, identifier, referenceId, token, requestedCurrency, requestedAmount, markupPercentage)
 }
 
 func (ap *AkashicPay) GetExchangeRates(requestedCurrency Currency) (IGetExchangeRatesResult, error) {
@@ -317,7 +317,7 @@ func chooseBestACNode(env Environment) (ACNode, error) {
 }
 
 func (ap *AkashicPay) getDepositUrlFunc(identifier string, referenceId string, receiveCurrencies []Currency, redirectUrl string, requestedCurrency Currency, requestedAmount string, markupPercentage float64) (string, error) {
-	keys, err := getKeysByOwnerAndIdentifier(ap.AkashicUrl, ap.Otk.Identity)
+	keys, err := getKeysByOwnerAndIdentifier(ap.AkashicUrl, ap.Otk.Identity, identifier)
 	if err != nil {
 		return "", err
 	}
@@ -326,29 +326,25 @@ func (ap *AkashicPay) getDepositUrlFunc(identifier string, referenceId string, r
 		return "", err
 	}
 
-	// existing owner key coin symbols
-	existingSymbols := make(map[NetworkSymbol]struct{})
-	for _, key := range keys.Data {
-		existingSymbols[key.CoinSymbol] = struct{}{}
-	}
-
-	// Build a set of existing coin symbols from keys
-	uniqueSymbols := make(map[NetworkSymbol]struct{})
-	for _, symbolList := range supportedCurrencies {
-		for _, symbol := range symbolList {
-			uniqueSymbols[symbol] = struct{}{}
-		}
+	// get networkSymbols that are owned
+	existingSymbols := make(map[NetworkSymbol]bool)
+	for _, key := range keys {
+		existingSymbols[key.CoinSymbol] = true
 	}
 
 	// get deposit addresses for unique symbols that are not already owned
-	for coinSymbol := range uniqueSymbols {
-		if _, exists := existingSymbols[coinSymbol]; !exists {
-			_, err := ap.GetDepositAddress(coinSymbol, identifier, "")
-			if err != nil {
-				return "", err
+	for _, networkSymbols := range supportedCurrencies {
+		for _, networkSymbol := range networkSymbols {
+			if _, exists := existingSymbols[networkSymbol]; !exists {
+				_, err := ap.GetDepositAddress(networkSymbol, identifier, "")
+				existingSymbols[networkSymbol] = true
+				if err != nil {
+					return "", err
+				}
 			}
 		}
 	}
+
 	if referenceId != "" {
 		payload := ICreateDepositOrder{
 			Identity:    ap.Otk.Identity,
@@ -356,7 +352,7 @@ func (ap *AkashicPay) getDepositUrlFunc(identifier string, referenceId string, r
 			Identifier:  identifier,
 			Expires:     time.Now().UnixMilli() + 60*1000,
 		}
-		if markupPercentage > 0 {
+		if markupPercentage != 0 {
 			payload.MarkupPercentage = markupPercentage
 		}
 		if requestedAmount != "" && requestedCurrency != "" {
@@ -389,7 +385,7 @@ func (ap *AkashicPay) getDepositUrlFunc(identifier string, referenceId string, r
 	return fmt.Sprintf("%v/sdk/deposit?%v", ap.AkashicPayUrl, params.Encode()), nil
 }
 
-func (ap *AkashicPay) getDepositAddressFunc(network NetworkSymbol, identifier string, referenceId string, token TokenSymbol, requestedCurrency Currency, requestedAmount string) (IDepositAddress, error) {
+func (ap *AkashicPay) getDepositAddressFunc(network NetworkSymbol, identifier string, referenceId string, token TokenSymbol, requestedCurrency Currency, requestedAmount string, markupPercentage float64) (IDepositAddress, error) {
 	// Check environment and network compatibility
 	if (ap.Env == Development && (network == Ethereum_Mainnet || network == Tron)) ||
 		(ap.Env == Production && (network == Ethereum_Sepolia || network == Tron_Shasta)) {
@@ -418,7 +414,7 @@ func (ap *AkashicPay) getDepositAddressFunc(network NetworkSymbol, identifier st
 		}
 
 		if referenceId != "" {
-			depositOrder, err := ap.createDepositPayloadAndOrder(referenceId, identifier, response.Address, network, token, requestedCurrency, requestedAmount)
+			depositOrder, err := ap.createDepositPayloadAndOrder(referenceId, identifier, response.Address, network, token, requestedCurrency, requestedAmount, markupPercentage)
 			if err != nil {
 				return IDepositAddress{}, err
 			}
@@ -433,6 +429,7 @@ func (ap *AkashicPay) getDepositAddressFunc(network NetworkSymbol, identifier st
 				ExchangeRate:      depositOrder.ExchangeRate,
 				Amount:            depositOrder.Amount,
 				Expires:           depositOrder.Expires,
+				MarkupPercentage:  depositOrder.MarkupPercentage,
 			}, nil
 		}
 		return IDepositAddress{
@@ -473,7 +470,7 @@ func (ap *AkashicPay) getDepositAddressFunc(network NetworkSymbol, identifier st
 
 	// If referenceId is provided, create a deposit order with new key address
 	if referenceId != "" {
-		depositOrder, err := ap.createDepositPayloadAndOrder(referenceId, identifier, newKey.Address, network, token, requestedCurrency, requestedAmount)
+		depositOrder, err := ap.createDepositPayloadAndOrder(referenceId, identifier, newKey.Address, network, token, requestedCurrency, requestedAmount, markupPercentage)
 		if err != nil {
 			return IDepositAddress{}, err
 		}
@@ -488,6 +485,7 @@ func (ap *AkashicPay) getDepositAddressFunc(network NetworkSymbol, identifier st
 			ExchangeRate:      depositOrder.ExchangeRate,
 			Amount:            depositOrder.Amount,
 			Expires:           depositOrder.Expires,
+			MarkupPercentage:  depositOrder.MarkupPercentage,
 		}, nil
 	}
 	return IDepositAddress{
@@ -496,7 +494,7 @@ func (ap *AkashicPay) getDepositAddressFunc(network NetworkSymbol, identifier st
 	}, nil
 }
 
-func (ap *AkashicPay) createDepositPayloadAndOrder(referenceId string, identifier string, address string, network NetworkSymbol, tokenSymbol TokenSymbol, requestedCurrency Currency, requestedAmount string) (ICreateDepositOrderResponse, error) {
+func (ap *AkashicPay) createDepositPayloadAndOrder(referenceId string, identifier string, address string, network NetworkSymbol, tokenSymbol TokenSymbol, requestedCurrency Currency, requestedAmount string, markupPercentage float64) (ICreateDepositOrderResponse, error) {
 	payload := ICreateDepositOrder{
 		Identity:    ap.Otk.Identity,
 		Expires:     time.Now().UnixMilli() + 60*1000,
@@ -505,6 +503,10 @@ func (ap *AkashicPay) createDepositPayloadAndOrder(referenceId string, identifie
 		ToAddress:   address,
 		CoinSymbol:  network,
 		TokenSymbol: tokenSymbol,
+	}
+
+	if markupPercentage != 0 {
+		payload.MarkupPercentage = markupPercentage
 	}
 
 	if requestedCurrency != "" && requestedAmount != "" {

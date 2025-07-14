@@ -2,6 +2,7 @@ package akashicpay
 
 import (
 	"fmt"
+	"net/url"
 	"strconv"
 	"strings"
 	"time"
@@ -231,8 +232,12 @@ func createDepositOrder(baseUrl string, payload ICreateDepositOrder) (ICreateDep
  */
 func getKeysByOwnerAndIdentifier(
 	baseUrl string,
+	identity string,
 	identifier string,
-) (KeyResponseWrapper, error) {
-	url := fmt.Sprintf("%v%v?identifier=%v", baseUrl, AllKeysOfIdentifierEndpoint, identifier)
-	return Get[KeyResponseWrapper](url)
+) ([]IKeyByOwnerAndIdentifierResponse, error) {
+	Params := url.Values{}
+	Params.Set("identity", identity)
+	Params.Set("identifier", identifier)
+	url := fmt.Sprintf("%v%v?%v", baseUrl, AllKeysOfIdentifierEndpoint, Params.Encode())
+	return Get[[]IKeyByOwnerAndIdentifierResponse](url)
 }
