@@ -63,7 +63,7 @@ func NewAkashicPay(privateKey string, identity string, env Environment, apiSecre
 		return nil, err
 	}
 	if !isBp.IsBp {
-		return nil, errors.New("not signed up")
+		return nil, NewAkashicError(AkashicErrorCodeIsNotBp, "")
 	}
 
 	return &AkashicPay{
