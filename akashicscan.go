@@ -71,6 +71,10 @@ type TransactionsResponse struct {
 	Transactions []ITransaction `json:"transactions"`
 }
 
+type L2HashTransactionResponse struct {
+	Transaction ITransaction `json:"transaction"`
+}
+
 // Akashic Endpoints
 const (
 	IsBpEndpoint                = "/v0/owner/is-bp"
@@ -194,4 +198,14 @@ func getTransfersQueryParams(params IGetTransactions, identity string) string {
 
 func joinQueryParams(params []string) string {
 	return strings.Join(params, "&")
+}
+
+func getTransactionDetails(baseUrl string, l2Hash string) (ITransaction, error) {
+	url := fmt.Sprintf("%v%v?l2Hash=%v",
+		baseUrl,
+		TransactionsDetailsEndpoint,
+		l2Hash,
+	)
+	response, err := Get[L2HashTransactionResponse](url)
+	return response.Transaction, err
 }

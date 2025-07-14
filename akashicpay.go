@@ -240,8 +240,8 @@ func (ap *AkashicPay) GetTransfers(getTransactionParams IGetTransactions) ([]ITr
 	return getTransfers(ap.AkashicUrl, ap.Otk.Identity, getTransactionParams)
 }
 
-func (ap *AkashicPay) GetTransactionDetails(l2Hash string) {
-
+func (ap *AkashicPay) GetTransactionDetails(l2Hash string) (ITransaction, error) {
+	return getTransactionDetails(ap.AkashicUrl, l2Hash)
 }
 
 // Get the currently supported currencies in AkashicPay
