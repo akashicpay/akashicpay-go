@@ -1,6 +1,11 @@
 package akashicpay
 
-import "fmt"
+import (
+	"fmt"
+	"strconv"
+	"strings"
+	"time"
+)
 
 // Akashic Requests
 
@@ -61,6 +66,10 @@ type IPrepareL2TxnResponse struct {
 }
 
 type IGetExchangeRatesResult map[string]string
+
+type TransactionsResponse struct {
+	Transactions []ITransaction `json:"transactions"`
+}
 
 // Akashic Endpoints
 const (
@@ -144,4 +153,45 @@ func getExchangeRates(baseUrl string, requestedCurrency Currency) (IGetExchangeR
 	exchangeRates, err := Get[IGetExchangeRatesResult](url)
 
 	return exchangeRates, err
+}
+
+func getTransfers(baseUrl string, identity string, params IGetTransactions) ([]ITransaction, error) {
+	query := getTransfersQueryParams(params, identity)
+	url := baseUrl + OwnerTransactionEndpoint + "?" + query
+	resp, err := Get[TransactionsResponse](url)
+	return resp.Transactions, err
+}
+
+func getTransfersQueryParams(params IGetTransactions, identity string) string {
+	values := make([]string, 0)
+	if params.Page != 0 {
+		values = append(values, "page="+strconv.Itoa(params.Page))
+	}
+	if params.Limit != 0 {
+		values = append(values, "limit="+strconv.Itoa(params.Limit))
+	}
+	if !params.StartDate.IsZero() {
+		values = append(values, "startDate="+params.StartDate.Format(time.RFC3339))
+	}
+	if !params.EndDate.IsZero() {
+		values = append(values, "endDate="+params.EndDate.Format(time.RFC3339))
+	}
+	if params.Layer != "" {
+		values = append(values, "layer="+string(params.Layer))
+	}
+	if params.Status != "" {
+		values = append(values, "status="+string(params.Status))
+	}
+	if params.Type != "" {
+		values = append(values, "type="+string(params.Type))
+	}
+	if params.HideSmallTransactions {
+		values = append(values, "hideSmallTransactions=true")
+	}
+	values = append(values, "identity="+identity)
+	return joinQueryParams(values)
+}
+
+func joinQueryParams(params []string) string {
+	return strings.Join(params, "&")
 }

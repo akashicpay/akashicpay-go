@@ -236,8 +236,8 @@ func (ap *AkashicPay) LookForL2Address(aliasOrL1OrL2Address string, network Netw
 	return getL2Lookup(ap.AkashicUrl, aliasOrL1OrL2Address, network)
 }
 
-func (ap *AkashicPay) GetTransfers() {
-
+func (ap *AkashicPay) GetTransfers(getTransactionParams IGetTransactions) ([]ITransaction, error) {
+	return getTransfers(ap.AkashicUrl, ap.Otk.Identity, getTransactionParams)
 }
 
 func (ap *AkashicPay) GetTransactionDetails(l2Hash string) {
