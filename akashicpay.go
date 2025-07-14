@@ -10,6 +10,7 @@ import (
 type Environment string
 type NetworkSymbol string
 type TokenSymbol string
+type CryptoCurrency string
 
 const (
 	Development Environment = "Development"
@@ -25,6 +26,14 @@ const (
 
 const (
 	USDT TokenSymbol = "USDT"
+)
+
+// Currencies supported by AkashicPay, includes native coins and tokens
+const (
+	USDT_C CryptoCurrency = "USDT"
+	TRX    CryptoCurrency = "TRX"
+	ETH    CryptoCurrency = "ETH"
+	SEP    CryptoCurrency = "SEP"
 )
 
 type AkashicPay struct {
@@ -123,8 +132,11 @@ func (ap *AkashicPay) GetTransfers() {
 func (ap *AkashicPay) GetTransactionDetails(l2Hash string) {
 
 }
-func (ap *AkashicPay) GetSupportedCurrencies() {
 
+// Get the currently supported currencies in AkashicPay
+// Returns a map from currencies to a list of networks supported for that currency
+func (ap *AkashicPay) GetSupportedCurrencies() (map[CryptoCurrency][]NetworkSymbol, error) {
+	return getSupportedCurrencies(ap.AkashicUrl)
 }
 
 func chooseBestACNode(env Environment) (ACNode, error) {

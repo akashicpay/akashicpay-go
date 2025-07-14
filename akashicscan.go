@@ -80,3 +80,13 @@ func getL2Lookup(baseUrl string, l2AddressOrAlias string, network NetworkSymbol)
 	l2Lookup, err := Get[ILookForL2AddressResponse](url)
 	return l2Lookup, err
 }
+
+func getSupportedCurrencies(baseUrl string) (map[CryptoCurrency][]NetworkSymbol, error) {
+	url := fmt.Sprintf("%v%v",
+		baseUrl,
+		SupportedCurrenciesEndpoint,
+	)
+	supportedCurrencies, err := Get[map[CryptoCurrency][]NetworkSymbol](url)
+
+	return supportedCurrencies, err
+}
