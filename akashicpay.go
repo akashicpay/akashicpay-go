@@ -228,6 +228,10 @@ func (ap *AkashicPay) GetDepositUrl(identifier string, referenceId string, recei
 	return ap.getDepositUrlFunc(identifier, referenceId, receiveCurrencies, redirectUrl, "", "", 0)
 }
 
+func (ap *AkashicPay) GetDepositUrlWithRequestedValue(identifier string, referenceId string, receiveCurrencies []Currency, redirectUrl string, requestedCurrency Currency, requestedAmount string, markupPercentage float64) (string, error) {
+	return ap.getDepositUrlFunc(identifier, referenceId, receiveCurrencies, redirectUrl, requestedCurrency, requestedAmount, markupPercentage)
+}
+
 func (ap *AkashicPay) GetDepositAddress(network NetworkSymbol, identifier string, referenceId string) (IDepositAddress, error) {
 	return ap.getDepositAddressFunc(network, identifier, referenceId, "", "", "", 0)
 }
@@ -356,8 +360,10 @@ func (ap *AkashicPay) getDepositUrlFunc(identifier string, referenceId string, r
 			payload.MarkupPercentage = markupPercentage
 		}
 		if requestedAmount != "" && requestedCurrency != "" {
-			payload.RequestedValue.Amount = requestedAmount
-			payload.RequestedValue.Currency = requestedCurrency
+			payload.RequestedValue = &IRequestedValue{
+				Amount:   requestedAmount,
+				Currency: requestedCurrency,
+			}
 		}
 		signature, err := signData(payload, ap.Otk.privateKey)
 		if err != nil {
