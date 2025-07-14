@@ -112,8 +112,8 @@ func (ap *AkashicPay) GetExchangeRates() {
 
 }
 
-func (ap *AkashicPay) LookForL2Address() {
-
+func (ap *AkashicPay) LookForL2Address(aliasOrL1OrL2Address string, network NetworkSymbol) (ILookForL2AddressResponse, error) {
+	return getL2Lookup(ap.AkashicUrl, aliasOrL1OrL2Address, network)
 }
 
 func (ap *AkashicPay) GetTransfers() {

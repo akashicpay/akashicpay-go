@@ -23,6 +23,11 @@ type IOwnerDetailsResponse struct {
 	IsFxBp                 bool                     `json:"isFxBp"`
 }
 
+type ILookForL2AddressResponse struct {
+	L2Address string `json:"l2Address,omitempty"`
+	Alias     string `json:"alias,omitempty"`
+}
+
 // Akashic Endpoints
 const (
 	IsBpEndpoint                = "/v0/owner/is-bp"
@@ -58,4 +63,20 @@ func getBalance(baseUrl string, l2Address string) (IOwnerDetailsResponse, error)
 	)
 	ownerDetails, err := Get[IOwnerDetailsResponse](url)
 	return ownerDetails, err
+}
+
+func getL2Lookup(baseUrl string, l2AddressOrAlias string, network NetworkSymbol) (ILookForL2AddressResponse, error) {
+	url := fmt.Sprintf("%v%v?to=%v",
+		baseUrl,
+		L2LookupEndpoint,
+		l2AddressOrAlias,
+	)
+	if network != "" {
+		url = fmt.Sprintf("%v&coinSymbol=%v",
+			url,
+			network,
+		)
+	}
+	l2Lookup, err := Get[ILookForL2AddressResponse](url)
+	return l2Lookup, err
 }
