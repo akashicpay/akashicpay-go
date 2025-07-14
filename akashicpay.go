@@ -5,6 +5,8 @@ import (
 	"errors"
 	"io"
 	"net/http"
+	"regexp"
+	"strings"
 )
 
 type Environment string
@@ -105,8 +107,117 @@ func (ap *AkashicPay) GetBalance() ([]Balance, error) {
 }
 
 // TODO: Implement below++
-func (ap *AkashicPay) Payout() {
+func (ap *AkashicPay) Payout(RecipientId string, To string, Amount string, Network NetworkSymbol, Token TokenSymbol) (string, error) {
+	ToAddress := To
+	InitiatedToNonL2 := ""
+	IsL2 := false
 
+	DecimalAmount, err := ConvertToSmallestUnit(Amount, Network, Token)
+	if err != nil {
+		return "", err
+	}
+
+	L2Lookup, err := ap.LookForL2Address(To, Network)
+
+	if err != nil {
+		return "", err
+	}
+
+	InputIsL1, err := regexp.MatchString(NetworkDictionary[Network].AddressRegex, To)
+	if err != nil {
+		return "", err
+	}
+	InputIsL2, err := regexp.MatchString(L2RegexWithOptionalPrefix, To)
+	if err != nil {
+		return "", err
+	}
+
+	if InputIsL1 {
+		if L2Lookup.L2Address != "" {
+			ToAddress = L2Lookup.L2Address
+			InitiatedToNonL2 = To
+			IsL2 = true
+		}
+	} else if InputIsL2 {
+		if L2Lookup.L2Address == "" {
+			return "", NewAkashicError(AkashicErrorCodeL2AddressNotFound, "")
+		}
+		IsL2 = true
+	} else {
+		// Must be alias
+		if L2Lookup.L2Address == "" {
+			return "", NewAkashicError(AkashicErrorCodeL2AddressNotFound, "")
+		}
+		ToAddress = L2Lookup.L2Address
+		InitiatedToNonL2 = To
+		IsL2 = true
+	}
+
+	// L2
+	if IsL2 {
+		signedL2Tx, err := L2Transaction(ap.Env, ap.Otk, Network, DecimalAmount, ToAddress, Token, InitiatedToNonL2, RecipientId, ap.IsFxBp)
+		if err != nil {
+			return "", err
+		}
+
+		//If FX, double-sign on BE
+		if ap.IsFxBp {
+			res, err := prepareL2Txn(ap.AkashicUrl, PrepareL2TxnDto{SignedTx: signedL2Tx})
+			if err != nil {
+				return "", err
+			}
+			signedL2Tx = res.PreparedTxn
+		}
+
+		acRes, err := Post[ActiveLedgerResponse[any, any]](ap.TargetNode.Node, signedL2Tx)
+		if err != nil {
+			return "", err
+		}
+		acErr := checkForAkashicChainError(acRes)
+		if acErr != nil {
+			return "", acErr
+		}
+
+		return PrefixWithAS(acRes.Umid)
+	}
+
+	// L1
+
+	Payload := PrepareTxnDto{
+		ToAddress:             To,
+		Amount:                Amount,
+		NetworkSymbol:         Network,
+		TokenSymbol:           Token,
+		Identifier:            RecipientId,
+		Identity:              ap.Otk.Identity,
+		FeeDelegationStrategy: FeeDelegationDelegate,
+	}
+	res, err := prepareL1Txn(ap.AkashicUrl, Payload)
+
+	if err != nil {
+		if strings.Contains(err.Error(), "exceeds total savings") {
+			return "", NewAkashicError(AkashicErrorCodeSavingsExceeded, "")
+		}
+		return "", err
+	}
+
+	SignedTxn, err := SignTransaction(res.PreparedTxn, ap.Otk)
+
+	if err != nil {
+		return "", err
+	}
+
+	acRes, err := Post[ActiveLedgerResponse[any, any]](ap.TargetNode.Node, SignedTxn)
+
+	if err != nil {
+		return "", err
+	}
+	acErr := checkForAkashicChainError(acRes)
+	if acErr != nil {
+		return "", acErr
+	}
+
+	return PrefixWithAS(acRes.Umid)
 }
 
 func (ap *AkashicPay) GetDepositAddress() {

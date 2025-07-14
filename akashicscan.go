@@ -1,8 +1,28 @@
 package akashicpay
 
-import (
-	"fmt"
+import "fmt"
+
+// Akashic Requests
+
+type FeeDelegationStrategy string
+
+const (
+	FeeDelegationNone     FeeDelegationStrategy = "None"
+	FeeDelegationDelegate FeeDelegationStrategy = "Delegate"
 )
+
+type PrepareTxnDto struct {
+	ToAddress             string                `json:"toAddress"`
+	NetworkSymbol         NetworkSymbol         `json:"coinSymbol"`
+	Amount                string                `json:"amount"`
+	TokenSymbol           TokenSymbol           `json:"tokenSymbol,omitempty"`
+	Identity              string                `json:"identity"`
+	Identifier            string                `json:"identifier"`
+	FeeDelegationStrategy FeeDelegationStrategy `json:"feeDelegationStrategy"`
+}
+type PrepareL2TxnDto struct {
+	SignedTx ACTransaction `json:"signedTx"`
+}
 
 // AkashicScan Responses
 type IsBpResponse struct {
@@ -28,6 +48,16 @@ type IOwnerDetailsResponse struct {
 type ILookForL2AddressResponse struct {
 	L2Address string `json:"l2Address,omitempty"`
 	Alias     string `json:"alias,omitempty"`
+}
+
+type IPrepareL1TxnResponse struct {
+	FromAddress  string        `json:"fromAddress"`
+	PreparedTxn  ACTransaction `json:"preparedTxn"`
+	DelegatedFee string        `json:"delegatedFee"`
+}
+
+type IPrepareL2TxnResponse struct {
+	PreparedTxn ACTransaction `json:"preparedTxn"`
 }
 
 type IGetExchangeRatesResult map[string]string
@@ -83,6 +113,16 @@ func getL2Lookup(baseUrl string, l2AddressOrAlias string, network NetworkSymbol)
 	}
 	l2Lookup, err := Get[ILookForL2AddressResponse](url)
 	return l2Lookup, err
+}
+
+func prepareL1Txn(baseUrl string, payload PrepareTxnDto) (IPrepareL1TxnResponse, error) {
+	url := fmt.Sprintf("%v%v", baseUrl, PrepareTxEndpoint)
+	return Post[IPrepareL1TxnResponse](url, payload)
+}
+
+func prepareL2Txn(baseUrl string, payload PrepareL2TxnDto) (IPrepareL2TxnResponse, error) {
+	url := fmt.Sprintf("%v%v", baseUrl, PrepareL2TxnEndpoint)
+	return Post[IPrepareL2TxnResponse](url, payload)
 }
 
 func getSupportedCurrencies(baseUrl string) (map[CryptoCurrency][]NetworkSymbol, error) {
