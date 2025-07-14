@@ -3,8 +3,11 @@ package akashicpay
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
 	"io"
 	"net/http"
+	"regexp"
+	"slices"
 )
 
 const (
@@ -72,6 +75,12 @@ func Post[T any](url string, data any) (T, error) {
 		return result, err
 	}
 
+	err = checkResponseForErrors(response)
+
+	if err != nil {
+		return result, err
+	}
+
 	defer response.Body.Close()
 	body, err := io.ReadAll(response.Body)
 
@@ -93,4 +102,34 @@ func setHeaders(request *http.Request) {
 	request.Header.Set("Content-Type", "application/json")
 	request.Header.Set("Ap-Version", version)
 	request.Header.Set("Ap-Client", client)
+}
+
+// Checks for HTTP errors, handles and formats them
+func checkResponseForErrors(response *http.Response) error {
+	if response.StatusCode < 400 {
+		return nil
+	}
+	// Check if response has a JSON body we can parse for an error message
+	isJson := slices.ContainsFunc(response.Header.Values("Content-Type"), func(e string) bool { m, err := regexp.MatchString("application/json", e); return m && err == nil })
+
+	if isJson {
+		var httpError map[string]any
+		body, err := io.ReadAll(response.Body)
+
+		if err != nil {
+			return err
+		}
+
+		// Unmarshal freaks out if body is empty
+		if len(body) > 0 {
+			err = json.Unmarshal(body, &httpError)
+			if err == nil {
+				return fmt.Errorf("%v: %v", httpError["error"], httpError["message"])
+			}
+		}
+	}
+
+	// If it's not JSON or we couldn't find any JSON body, just return status code
+	return fmt.Errorf("HTTP Error: %v", response.StatusCode)
+
 }
