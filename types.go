@@ -103,3 +103,50 @@ type IGetTransactions struct {
 	Type                  TransactionType
 	HideSmallTransactions bool
 }
+
+type IDepositAddress struct {
+	Address           string
+	Identifier        string
+	ReferenceId       string
+	RequestedAmount   string
+	RequestedCurrency Currency
+	Network           NetworkSymbol
+	Token             TokenSymbol
+	ExchangeRate      string
+	Amount            string
+	Expires           string
+}
+
+type IGetByOwnerAndIdentifierResponse struct {
+	Address            string `json:"address,omitempty"`
+	UnassignedLedgerId string `json:"unassignedLedgerId,omitempty"`
+}
+type IRequestedValue struct {
+	Currency Currency `json:"currency,omitempty"`
+	Amount   string   `json:"amount,omitempty"`
+}
+type ICreateDepositOrderResponse struct {
+	Id                string        `json:"id"`
+	ReferenceId       string        `json:"referenceId,omitempty"`
+	Identifier        string        `json:"identifier"`
+	ToAddress         string        `json:"toAddress,omitempty"`
+	CoinSymbol        NetworkSymbol `json:"coinSymbol,omitempty"`
+	TokenSymbol       TokenSymbol   `json:"tokenSymbol,omitempty"`
+	RequestedAmount   string        `json:"requestedAmount,omitempty"`
+	RequestedCurrency Currency      `json:"requestedCurrency,omitempty"`
+	Amount            string        `json:"amount,omitempty"`
+	ExchangeRate      string        `json:"exchangeRate,omitempty"`
+	Expires           string        `json:"expires"`
+}
+
+type ICreateDepositOrder struct {
+	Identity       string           `json:"identity"`
+	Expires        int64            `json:"expires"`
+	ReferenceId    string           `json:"referenceId"`
+	Identifier     string           `json:"identifier"`
+	ToAddress      string           `json:"toAddress,omitempty"`
+	CoinSymbol     NetworkSymbol    `json:"coinSymbol,omitempty"`
+	TokenSymbol    TokenSymbol      `json:"tokenSymbol,omitempty"`
+	RequestedValue *IRequestedValue `json:"requestedValue,omitempty"`
+	Signature      string           `json:"signature,omitempty"`
+}

@@ -50,6 +50,7 @@ type ACTransaction struct {
 	TxObject  TxObject               `json:"$tx"`
 	SelfSign  bool                   `json:"$selfsign"`
 	Signature map[string]interface{} `json:"$sigs"`
+	Unanimous bool                   `json:"$unanimous"`
 }
 
 // TxObject within a transaction
@@ -63,6 +64,12 @@ type TxObject struct {
 	DbIndex   int                    `json:"_dbIndex,omitempty"`
 	Expire    string                 `json:"$expire,omitempty"`
 	Metadata  map[string]interface{} `json:"metadata,omitempty"`
+}
+
+type IKeyCreationResponse struct {
+	Id      string   `json:"id"`
+	Address string   `json:"address"`
+	Hashes  []string `json:"hashes"`
 }
 
 // AC Response
@@ -82,25 +89,92 @@ type ActiveLedgerResponse[ResponseT, StreamT any] struct {
 	Debug     any         `json:"$debug,omitempty"`
 }
 
-// TODO: This is ugly, but proves the concept (I was able to make a key!)
-// Should factor out all the signing bits into a separate func
-func KeyCreateTransaction(coinSymbol NetworkSymbol, otk Otk) (ACTransaction, error) {
+// getACSymbol returns the canonical symbol for a given network symbol (e.g., 'trx' for Tron, 'eth' for Ethereum)
+func getACSymbol(coinSymbol NetworkSymbol) string {
+	switch coinSymbol {
+	case Tron, Tron_Shasta:
+		return "trx"
+	case Ethereum_Mainnet, Ethereum_Sepolia:
+		return "eth"
+	default:
+		return string(coinSymbol)
+	}
+}
+
+// getACNetwork returns the canonical network name for a given network symbol
+func getACNetwork(coinSymbol NetworkSymbol) string {
+	switch coinSymbol {
+	case Ethereum_Mainnet:
+		return "ETH"
+	case Ethereum_Sepolia:
+		return "SEP"
+	case Tron:
+		return "trx"
+	case Tron_Shasta:
+		return "shasta"
+	default:
+		return string(coinSymbol)
+	}
+}
+
+// signData signs any data structure using the provided private key and returns the signature string.
+func signData(data interface{}, privateKey string) (string, error) {
+	txObjectByte, err := json.Marshal(data)
+	if err != nil {
+		return "", err
+	}
+	privateKeyByte, err := hex.DecodeString(strings.TrimLeft(privateKey, "0x"))
+	if err != nil {
+		return "", err
+	}
+	priv, pub := btcec.PrivKeyFromBytes([]byte(privateKeyByte))
+	privECDSA := priv.ToECDSA()
+	pubECDSA := pub.ToECDSA()
+	privateKeyObj := new(bitecdsa.PrivateKey)
+	privateKeyObj.PublicKey.BitCurve = bitelliptic.S256()
+	privateKeyObj.D = privECDSA.D
+	privateKeyObj.PublicKey.X = pubECDSA.X
+	privateKeyObj.PublicKey.Y = pubECDSA.Y
+	sign := alsdk.EcdsaSign(privateKeyObj, string(txObjectByte))
+	return sign, nil
+}
+
+// signTransaction signs an ACTransaction and attaches the signature to its Signature map.
+func signTransaction(tx ACTransaction, otk Otk) (ACTransaction, error) {
+	sign, err := signData(tx.TxObject, otk.privateKey)
+	if err != nil {
+		return ACTransaction{}, err
+	}
+	tx.Signature[otk.Identity] = sign
+	return tx, nil
+}
+
+func KeyCreateTransaction(env Environment, coinSymbol NetworkSymbol, otk Otk) (ACTransaction, error) {
+	contracts := ACTestNetContracts
+	dbIndex := 15
+
+	if env == Production {
+		contracts = ACMainNetContracts
+		dbIndex = 0
+	}
 	TxBody := ACTransaction{
 		TxObject: TxObject{
-			Namespace: "akashicchain",
-			Contract:  "ad171259a7c628ba6993c6bd555f07111525128194aa4226662e48a0b0a93116@1",
+			Namespace: ACNamespace,
+			Contract:  contracts.Create,
 			Input: map[string]interface{}{
 				"owner": map[string]interface{}{
 					"$stream":  otk.Identity,
-					"symbol":   "trx",
-					"network":  "shasta",
+					"symbol":   getACSymbol(coinSymbol),
+					"network":  getACNetwork(coinSymbol),
 					"business": true,
 				},
 			},
-			DbIndex: 15,
+			DbIndex: dbIndex,
 		},
+		Signature: map[string]interface{}{},
 	}
-	return SignTransaction(TxBody, otk)
+	addExpireToTx(&TxBody)
+	return signTransaction(TxBody, otk)
 }
 
 // Create and Sign an L2 transaction
@@ -166,7 +240,7 @@ func L2Transaction(
 		Signature: map[string]interface{}{},
 	}
 	addExpireToTx(&TxBody)
-	return SignTransaction(TxBody, otk)
+	return signTransaction(TxBody, otk)
 }
 
 func addExpireToTx(tx *ACTransaction) *ACTransaction {
@@ -177,31 +251,7 @@ func addExpireToTx(tx *ACTransaction) *ACTransaction {
 	return tx
 }
 
-func SignTransaction(tx ACTransaction, otk Otk) (ACTransaction, error) {
-	txObjectByte, _ := json.Marshal(tx.TxObject)
-
-	privateKeyByte, err := hex.DecodeString(strings.TrimLeft(otk.privateKey, "0x"))
-
-	if err != nil {
-		return ACTransaction{}, err
-	}
-	priv, pub := btcec.PrivKeyFromBytes([]byte(privateKeyByte))
-
-	privECDSA := priv.ToECDSA()
-	pubECDSA := pub.ToECDSA()
-
-	privateKey := new(bitecdsa.PrivateKey)
-	privateKey.PublicKey.BitCurve = bitelliptic.S256()
-	privateKey.D = privECDSA.D
-	privateKey.PublicKey.X = pubECDSA.X
-	privateKey.PublicKey.Y = pubECDSA.Y
-
-	sign := alsdk.EcdsaSign(privateKey, string(txObjectByte))
-	tx.Signature[otk.Identity] = sign
-	return tx, nil
-}
-
-func checkForAkashicChainError(response ActiveLedgerResponse[any, any]) error {
+func checkForAkashicChainError[T any](response ActiveLedgerResponse[T, any]) error {
 	if response.Summary.Commit > 0 {
 		return nil
 	}
@@ -217,4 +267,86 @@ func checkForAkashicChainError(response ActiveLedgerResponse[any, any]) error {
 		return NewAkashicError(AkashicErrorCodeL2AddressNotFound, "")
 	}
 	return NewAkashicError(AkashicErrorCodeUnknownError, "AkashicChain Failure: "+acErrorString)
+}
+
+// AssignKeyTransaction creates and signs a transaction to assign a key to a user identifier
+func Assign(env Environment, otk Otk, ledgerId string, identifier string) (ACTransaction, error) {
+	contracts := ACTestNetContracts
+	dbIndex := 15
+
+	if env == Production {
+		contracts = ACMainNetContracts
+		dbIndex = 0
+	}
+
+	TxBody := ACTransaction{
+		TxObject: TxObject{
+			Namespace: ACNamespace,
+			Contract:  contracts.AssignKey,
+			Input: map[string]interface{}{
+				"owner": map[string]interface{}{
+					"$stream": otk.Identity,
+				},
+			},
+			Output: map[string]interface{}{
+				"key": map[string]interface{}{
+					"$stream": ledgerId,
+				},
+			},
+			Metadata: map[string]interface{}{
+				"identifier": identifier,
+			},
+			DbIndex: dbIndex,
+		},
+		Signature: map[string]interface{}{},
+	}
+	addExpireToTx(&TxBody)
+	return signTransaction(TxBody, otk)
+}
+
+func differentialConsensusTransaction(
+	env Environment,
+	otk Otk,
+	key IKeyCreationResponse,
+	identifier string,
+) (ACTransaction, error) {
+	contracts := ACTestNetContracts
+	dbIndex := 15
+
+	if env == Production {
+		contracts = ACMainNetContracts
+		dbIndex = 0
+	}
+
+	TxBody := ACTransaction{
+		TxObject: TxObject{
+			Namespace: ACNamespace,
+			Contract:  contracts.DiffConsensus,
+			Input: map[string]interface{}{
+				"owner": map[string]interface{}{
+					"publicKey": otk.publicKey,
+					"type":      "secp256k1",
+					"address":   key.Address,
+					"hashes":    key.Hashes,
+				},
+			},
+			Output: map[string]interface{}{
+				"key": map[string]interface{}{
+					"$stream": key.Id,
+				},
+			},
+			DbIndex: dbIndex,
+			Metadata: map[string]interface{}{
+				"identifier": identifier,
+			},
+		},
+		SelfSign:  true,
+		Signature: map[string]interface{}{},
+		Unanimous: true,
+	}
+
+	addExpireToTx(&TxBody)
+	newOtk := otk
+	newOtk.Identity = "owner"
+	return signTransaction(TxBody, newOtk)
 }

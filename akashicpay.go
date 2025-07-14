@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"regexp"
 	"strings"
+	"time"
 )
 
 type Environment string
@@ -201,7 +202,7 @@ func (ap *AkashicPay) Payout(RecipientId string, To string, Amount string, Netwo
 		return "", err
 	}
 
-	SignedTxn, err := SignTransaction(res.PreparedTxn, ap.Otk)
+	SignedTxn, err := signTransaction(res.PreparedTxn, ap.Otk)
 
 	if err != nil {
 		return "", err
@@ -220,8 +221,12 @@ func (ap *AkashicPay) Payout(RecipientId string, To string, Amount string, Netwo
 	return PrefixWithAS(acRes.Umid)
 }
 
-func (ap *AkashicPay) GetDepositAddress() {
+func (ap *AkashicPay) GetDepositAddress(network NetworkSymbol, identifier string, referenceId string) (IDepositAddress, error) {
+	return ap.getDepositAddressFunc(network, identifier, referenceId, "", "", "")
+}
 
+func (ap *AkashicPay) GetDepositAddressWithRequestedValue(network NetworkSymbol, identifier string, referenceId string, requestedCurrency Currency, requestedAmount string, token TokenSymbol) (IDepositAddress, error) {
+	return ap.getDepositAddressFunc(network, identifier, referenceId, token, requestedCurrency, requestedAmount)
 }
 
 func (ap *AkashicPay) GetDepositUrl() {
@@ -306,4 +311,139 @@ func chooseBestACNode(env Environment) (ACNode, error) {
 
 	// if we don't get any 4s we return an error
 	return ACNode{}, errors.New("no healthy AC node")
+}
+
+func (ap *AkashicPay) getDepositAddressFunc(network NetworkSymbol, identifier string, referenceId string, token TokenSymbol, requestedCurrency Currency, requestedAmount string) (IDepositAddress, error) {
+	// Check environment and network compatibility
+	if (ap.Env == Development && (network == Ethereum_Mainnet || network == Tron)) ||
+		(ap.Env == Production && (network == Ethereum_Sepolia || network == Tron_Shasta)) {
+		return IDepositAddress{}, NewAkashicError(AkashicErrorCodeNetworkEnvironmentMismatch, "")
+	}
+
+	response, err := getByOwnerAndIdentifier(ap.AkashicUrl, network, identifier, ap.Otk.Identity)
+	if err != nil {
+		return IDepositAddress{}, err
+	}
+	if response.Address != "" {
+		if response.UnassignedLedgerId != "" {
+			tx, err := Assign(ap.Env, ap.Otk, response.UnassignedLedgerId, identifier)
+			if err != nil {
+				return IDepositAddress{}, err
+			}
+
+			acRes, err := Post[ActiveLedgerResponse[IKeyCreationResponse, any]](ap.TargetNode.Node, tx)
+			if err != nil {
+				return IDepositAddress{}, err
+			}
+
+			acErr := checkForAkashicChainError(acRes)
+			if acErr != nil {
+				return IDepositAddress{}, acErr
+			}
+		}
+
+		if referenceId != "" {
+			depositOrder, err := ap.createDepositPayloadAndOrder(referenceId, identifier, response.Address, network, token, requestedCurrency, requestedAmount)
+			if err != nil {
+				return IDepositAddress{}, err
+			}
+			return IDepositAddress{
+				Address:           response.Address,
+				Identifier:        identifier,
+				ReferenceId:       referenceId,
+				RequestedAmount:   depositOrder.RequestedAmount,
+				RequestedCurrency: depositOrder.RequestedCurrency,
+				Network:           network,
+				Token:             depositOrder.TokenSymbol,
+				ExchangeRate:      depositOrder.ExchangeRate,
+				Amount:            depositOrder.Amount,
+				Expires:           depositOrder.Expires,
+			}, nil
+		}
+		return IDepositAddress{
+			Address:    response.Address,
+			Identifier: identifier,
+		}, nil
+	}
+
+	// If no address found, create a new key
+	tx, err := KeyCreateTransaction(ap.Env, network, ap.Otk)
+	if err != nil {
+		return IDepositAddress{}, err
+	}
+
+	createKeyRes, err := Post[ActiveLedgerResponse[IKeyCreationResponse, any]](ap.TargetNode.Node, tx)
+	if err != nil {
+		return IDepositAddress{}, err
+	}
+	acErr := checkForAkashicChainError(createKeyRes)
+	if acErr != nil {
+		return IDepositAddress{}, acErr
+	}
+	newKey := createKeyRes.Responses[0]
+
+	diffConTx, err := differentialConsensusTransaction(ap.Env, ap.Otk, newKey, identifier)
+	if err != nil {
+		return IDepositAddress{}, err
+	}
+
+	diffConTxResp, err := Post[ActiveLedgerResponse[any, any]](ap.TargetNode.Node, diffConTx)
+	if err != nil {
+		return IDepositAddress{}, err
+	}
+	acError := checkForAkashicChainError(diffConTxResp)
+	if acError != nil {
+		return IDepositAddress{}, acError
+	}
+
+	// If referenceId is provided, create a deposit order with new key address
+	if referenceId != "" {
+		depositOrder, err := ap.createDepositPayloadAndOrder(referenceId, identifier, newKey.Address, network, token, requestedCurrency, requestedAmount)
+		if err != nil {
+			return IDepositAddress{}, err
+		}
+		return IDepositAddress{
+			Address:           newKey.Address,
+			Identifier:        identifier,
+			ReferenceId:       referenceId,
+			RequestedAmount:   depositOrder.RequestedAmount,
+			RequestedCurrency: depositOrder.RequestedCurrency,
+			Network:           network,
+			Token:             depositOrder.TokenSymbol,
+			ExchangeRate:      depositOrder.ExchangeRate,
+			Amount:            depositOrder.Amount,
+			Expires:           depositOrder.Expires,
+		}, nil
+	}
+	return IDepositAddress{
+		Address:    newKey.Address,
+		Identifier: identifier,
+	}, nil
+}
+
+func (ap *AkashicPay) createDepositPayloadAndOrder(referenceId string, identifier string, address string, network NetworkSymbol, tokenSymbol TokenSymbol, requestedCurrency Currency, requestedAmount string) (ICreateDepositOrderResponse, error) {
+	payload := ICreateDepositOrder{
+		Identity:    ap.Otk.Identity,
+		Expires:     time.Now().UnixMilli() + 60*1000,
+		ReferenceId: referenceId,
+		Identifier:  identifier,
+		ToAddress:   address,
+		CoinSymbol:  network,
+		TokenSymbol: tokenSymbol,
+	}
+
+	if requestedCurrency != "" && requestedAmount != "" {
+		payload.RequestedValue = &IRequestedValue{
+			Currency: requestedCurrency,
+			Amount:   requestedAmount,
+		}
+	}
+
+	signature, err := signData(payload, ap.Otk.privateKey)
+	if err != nil {
+		return ICreateDepositOrderResponse{}, err
+	}
+	createOrderPayload := payload
+	createOrderPayload.Signature = signature
+	return createDepositOrder(ap.AkashicUrl, createOrderPayload)
 }

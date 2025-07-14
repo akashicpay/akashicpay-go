@@ -209,3 +209,19 @@ func getTransactionDetails(baseUrl string, l2Hash string) (ITransaction, error) 
 	response, err := Get[L2HashTransactionResponse](url)
 	return response.Transaction, err
 }
+
+func getByOwnerAndIdentifier(baseUrl string, coinSymbol NetworkSymbol, identifier string, identity string) (IGetByOwnerAndIdentifierResponse, error) {
+	url := fmt.Sprintf("%v%v?identity=%v&identifier=%v&coinSymbol=%v&usePreSeed=true",
+		baseUrl,
+		IdentifierLookupEndpoint,
+		identity,
+		identifier,
+		coinSymbol,
+	)
+	return Get[IGetByOwnerAndIdentifierResponse](url)
+}
+
+func createDepositOrder(baseUrl string, payload ICreateDepositOrder) (ICreateDepositOrderResponse, error) {
+	url := fmt.Sprintf("%v%v", baseUrl, CreateDepositOrderEndpoint)
+	return Post[ICreateDepositOrderResponse](url, payload)
+}
