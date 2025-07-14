@@ -54,6 +54,11 @@ var networkDictionary = map[NetworkSymbol]networkInfo{
 				Symbol:   USDT,
 				Contract: "TG3XXyExBkPp9nzdajDZsozEu4BkaSJozs",
 			},
+			{
+				Decimal:  6,
+				Symbol:   tether,
+				Contract: "TG3XXyExBkPp9nzdajDZsozEu4BkaSJozs",
+			},
 		},
 	},
 }
