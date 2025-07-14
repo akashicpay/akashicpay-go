@@ -164,7 +164,12 @@ func getTransfers(baseUrl string, identity string, params IGetTransactions) ([]I
 	query := getTransfersQueryParams(params, identity)
 	url := baseUrl + ownerTransactionEndpoint + "?" + query
 	resp, err := get[transactionsResponse](url)
-	return resp.Transactions, err
+
+	transactions := resp.Transactions
+	for _, t := range transactions {
+		t.TokenSymbol = normalizeTokenSymbol(t.TokenSymbol)
+	}
+	return transactions, err
 }
 
 func getTransfersQueryParams(params IGetTransactions, identity string) string {
@@ -208,7 +213,10 @@ func getTransactionDetails(baseUrl string, l2Hash string) (ITransaction, error) 
 		l2Hash,
 	)
 	response, err := get[l2HashTransactionResponse](url)
-	return response.Transaction, err
+
+	t := response.Transaction
+	t.TokenSymbol = normalizeTokenSymbol(t.TokenSymbol)
+	return t, err
 }
 
 func getByOwnerAndIdentifier(baseUrl string, coinSymbol NetworkSymbol, identifier string, identity string) (iGetByOwnerAndIdentifierResponse, error) {

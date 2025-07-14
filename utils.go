@@ -59,3 +59,19 @@ func cryptoCurrencySliceToStringSlice(currencies []CryptoCurrency) []string {
 	}
 	return result
 }
+
+// Normalize token symbols (map TETHER to USDT)
+func normalizeTokenSymbol(symbol TokenSymbol) TokenSymbol {
+	if symbol == tether {
+		return USDT
+	}
+	return symbol
+}
+
+// Normalize token (map USDT to TETHER for Tron Shasta network)
+func normalizeTokenInput(network NetworkSymbol, token TokenSymbol) TokenSymbol {
+	if network == Tron_Shasta && token == USDT {
+		return tether
+	}
+	return token
+}
