@@ -1,4 +1,4 @@
-module github.com/akashic/go-sdk
+module gitlab.com/dreamsai/cpg-2/akashicpay-go.git
 
 go 1.24.4
 
