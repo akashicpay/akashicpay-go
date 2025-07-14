@@ -181,10 +181,10 @@ func getTransfersQueryParams(params IGetTransactions, identity string) string {
 		values = append(values, "limit="+strconv.Itoa(params.Limit))
 	}
 	if !params.StartDate.IsZero() {
-		values = append(values, "startDate="+params.StartDate.Format(time.RFC3339))
+		values = append(values, "startDate="+params.StartDate.UTC().Format(time.RFC3339))
 	}
 	if !params.EndDate.IsZero() {
-		values = append(values, "endDate="+params.EndDate.Format(time.RFC3339))
+		values = append(values, "endDate="+params.EndDate.UTC().Format(time.RFC3339))
 	}
 	if params.Layer != "" {
 		values = append(values, "layer="+string(params.Layer))
