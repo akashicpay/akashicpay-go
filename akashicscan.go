@@ -10,42 +10,42 @@ import (
 
 // Akashic Requests
 
-type FeeDelegationStrategy string
+type feeDelegationStrategy string
 
 const (
-	FeeDelegationNone     FeeDelegationStrategy = "None"
-	FeeDelegationDelegate FeeDelegationStrategy = "Delegate"
+	feeDelegationNone      feeDelegationStrategy = "None"
+	ffeeDelegationDelegate feeDelegationStrategy = "Delegate"
 )
 
-type PrepareTxnDto struct {
+type prepareTxnDto struct {
 	ToAddress             string                `json:"toAddress"`
 	NetworkSymbol         NetworkSymbol         `json:"coinSymbol"`
 	Amount                string                `json:"amount"`
 	TokenSymbol           TokenSymbol           `json:"tokenSymbol,omitempty"`
 	Identity              string                `json:"identity"`
 	Identifier            string                `json:"identifier"`
-	FeeDelegationStrategy FeeDelegationStrategy `json:"feeDelegationStrategy"`
+	FeeDelegationStrategy feeDelegationStrategy `json:"feeDelegationStrategy"`
 }
-type PrepareL2TxnDto struct {
-	SignedTx ACTransaction `json:"signedTx"`
+type prepareL2TxnDto struct {
+	SignedTx acTransaction `json:"signedTx"`
 }
 
 // AkashicScan Responses
-type IsBpResponse struct {
+type isBpResponse struct {
 	IsBp   bool `json:"isBp"`
 	IsFxBp bool `json:"isFxBp"`
 }
 
-type IOwnerBalancesResponse struct {
+type iOwnerBalancesResponse struct {
 	CoinSymbol  NetworkSymbol `json:"coinSymbol"`
 	Amount      string        `json:"balance"`
 	TokenSymbol TokenSymbol   `json:"tokenSymbol"`
 }
 
-type IOwnerDetailsResponse struct {
-	TotalBalances          []IOwnerBalancesResponse `json:"totalBalances"`
-	PendingDepositBalances []IOwnerBalancesResponse `json:"pendingDepositBalances"`
-	PendingSendBalances    []IOwnerBalancesResponse `json:"pendingSendBalances"`
+type iOwnerDetailsResponse struct {
+	TotalBalances          []iOwnerBalancesResponse `json:"totalBalances"`
+	PendingDepositBalances []iOwnerBalancesResponse `json:"pendingDepositBalances"`
+	PendingSendBalances    []iOwnerBalancesResponse `json:"pendingSendBalances"`
 	OwnerIdentity          string                   `json:"ownerIdentity"`
 	TransactionCount       int                      `json:"transactionCount"`
 	IsFxBp                 bool                     `json:"isFxBp"`
@@ -56,67 +56,67 @@ type ILookForL2AddressResponse struct {
 	Alias     string `json:"alias,omitempty"`
 }
 
-type IPrepareL1TxnResponse struct {
+type iPrepareL1TxnResponse struct {
 	FromAddress  string        `json:"fromAddress"`
-	PreparedTxn  ACTransaction `json:"preparedTxn"`
+	PreparedTxn  acTransaction `json:"preparedTxn"`
 	DelegatedFee string        `json:"delegatedFee"`
 }
 
-type IPrepareL2TxnResponse struct {
-	PreparedTxn ACTransaction `json:"preparedTxn"`
+type iPrepareL2TxnResponse struct {
+	PreparedTxn acTransaction `json:"preparedTxn"`
 }
 
 type IGetExchangeRatesResult map[string]string
 
-type TransactionsResponse struct {
+type transactionsResponse struct {
 	Transactions []ITransaction `json:"transactions"`
 }
 
-type L2HashTransactionResponse struct {
+type l2HashTransactionResponse struct {
 	Transaction ITransaction `json:"transaction"`
 }
 
 // Akashic Endpoints
 const (
-	IsBpEndpoint                = "/v0/owner/is-bp"
-	PrepareTxEndpoint           = "/v0/l1-txn-orchestrator/prepare-withdrawal"
-	L2LookupEndpoint            = "/v0/nft/look-for-l2-address"
-	OwnerTransactionEndpoint    = "/v0/owner/transactions"
-	OwnerBalanceEndpoint        = "/v0/owner/details"
-	TransactionsDetailsEndpoint = "/v0/transactions/transfer"
-	IdentifierLookupEndpoint    = "/v0/key/bp-deposit-key"
-	AllKeysOfIdentifierEndpoint = "/v0/key/all-bp-deposit-keys"
-	SupportedCurrenciesEndpoint = "/v1/config/supported-currencies"
-	CreateDepositOrderEndpoint  = "/v0/deposit-request"
-	OwnerKeysEndpoint           = "/v0/owner/keys?address"
-	PrepareL2TxnEndpoint        = "/v0/l2-txn-orchestrator/prepare-l2-withdrawal"
-	ExchangeRatesEndpoint       = "/v0/exchange-rate"
+	isBpEndpoint                = "/v0/owner/is-bp"
+	prepareTxEndpoint           = "/v0/l1-txn-orchestrator/prepare-withdrawal"
+	l2LookupEndpoint            = "/v0/nft/look-for-l2-address"
+	ownerTransactionEndpoint    = "/v0/owner/transactions"
+	ownerBalanceEndpoint        = "/v0/owner/details"
+	transactionsDetailsEndpoint = "/v0/transactions/transfer"
+	identifierLookupEndpoint    = "/v0/key/bp-deposit-key"
+	allKeysOfIdentifierEndpoint = "/v0/key/all-bp-deposit-keys"
+	supportedCurrenciesEndpoint = "/v1/config/supported-currencies"
+	createDepositOrderEndpoint  = "/v0/deposit-request"
+	ownerKeysEndpoint           = "/v0/owner/keys?address"
+	prepareL2TxnEndpoint        = "/v0/l2-txn-orchestrator/prepare-l2-withdrawal"
+	exchangeRatesEndpoint       = "/v0/exchange-rate"
 )
 
-func getIsBp(baseUrl string, l2Address string) (IsBpResponse, error) {
+func getIsBp(baseUrl string, l2Address string) (isBpResponse, error) {
 	url := fmt.Sprintf("%v%v?address=%v",
 		baseUrl,
-		IsBpEndpoint,
+		isBpEndpoint,
 		l2Address,
 	)
-	isBp, err := Get[IsBpResponse](url)
+	isBp, err := get[isBpResponse](url)
 	return isBp, err
 }
 
-func getBalance(baseUrl string, l2Address string) (IOwnerDetailsResponse, error) {
+func getBalance(baseUrl string, l2Address string) (iOwnerDetailsResponse, error) {
 	url := fmt.Sprintf("%v%v?address=%v",
 		baseUrl,
-		OwnerBalanceEndpoint,
+		ownerBalanceEndpoint,
 		l2Address,
 	)
-	ownerDetails, err := Get[IOwnerDetailsResponse](url)
+	ownerDetails, err := get[iOwnerDetailsResponse](url)
 	return ownerDetails, err
 }
 
 func getL2Lookup(baseUrl string, l2AddressOrAlias string, network NetworkSymbol) (ILookForL2AddressResponse, error) {
 	url := fmt.Sprintf("%v%v?to=%v",
 		baseUrl,
-		L2LookupEndpoint,
+		l2LookupEndpoint,
 		l2AddressOrAlias,
 	)
 	if network != "" {
@@ -125,26 +125,26 @@ func getL2Lookup(baseUrl string, l2AddressOrAlias string, network NetworkSymbol)
 			network,
 		)
 	}
-	l2Lookup, err := Get[ILookForL2AddressResponse](url)
+	l2Lookup, err := get[ILookForL2AddressResponse](url)
 	return l2Lookup, err
 }
 
-func prepareL1Txn(baseUrl string, payload PrepareTxnDto) (IPrepareL1TxnResponse, error) {
-	url := fmt.Sprintf("%v%v", baseUrl, PrepareTxEndpoint)
-	return Post[IPrepareL1TxnResponse](url, payload)
+func prepareL1Txn(baseUrl string, payload prepareTxnDto) (iPrepareL1TxnResponse, error) {
+	url := fmt.Sprintf("%v%v", baseUrl, prepareTxEndpoint)
+	return post[iPrepareL1TxnResponse](url, payload)
 }
 
-func prepareL2Txn(baseUrl string, payload PrepareL2TxnDto) (IPrepareL2TxnResponse, error) {
-	url := fmt.Sprintf("%v%v", baseUrl, PrepareL2TxnEndpoint)
-	return Post[IPrepareL2TxnResponse](url, payload)
+func prepareL2Txn(baseUrl string, payload prepareL2TxnDto) (iPrepareL2TxnResponse, error) {
+	url := fmt.Sprintf("%v%v", baseUrl, prepareL2TxnEndpoint)
+	return post[iPrepareL2TxnResponse](url, payload)
 }
 
 func getSupportedCurrencies(baseUrl string) (map[CryptoCurrency][]NetworkSymbol, error) {
 	url := fmt.Sprintf("%v%v",
 		baseUrl,
-		SupportedCurrenciesEndpoint,
+		supportedCurrenciesEndpoint,
 	)
-	supportedCurrencies, err := Get[map[CryptoCurrency][]NetworkSymbol](url)
+	supportedCurrencies, err := get[map[CryptoCurrency][]NetworkSymbol](url)
 
 	return supportedCurrencies, err
 }
@@ -152,18 +152,18 @@ func getSupportedCurrencies(baseUrl string) (map[CryptoCurrency][]NetworkSymbol,
 func getExchangeRates(baseUrl string, requestedCurrency Currency) (IGetExchangeRatesResult, error) {
 	url := fmt.Sprintf("%v%v/%v",
 		baseUrl,
-		ExchangeRatesEndpoint,
+		exchangeRatesEndpoint,
 		requestedCurrency,
 	)
-	exchangeRates, err := Get[IGetExchangeRatesResult](url)
+	exchangeRates, err := get[IGetExchangeRatesResult](url)
 
 	return exchangeRates, err
 }
 
 func getTransfers(baseUrl string, identity string, params IGetTransactions) ([]ITransaction, error) {
 	query := getTransfersQueryParams(params, identity)
-	url := baseUrl + OwnerTransactionEndpoint + "?" + query
-	resp, err := Get[TransactionsResponse](url)
+	url := baseUrl + ownerTransactionEndpoint + "?" + query
+	resp, err := get[transactionsResponse](url)
 	return resp.Transactions, err
 }
 
@@ -204,27 +204,27 @@ func joinQueryParams(params []string) string {
 func getTransactionDetails(baseUrl string, l2Hash string) (ITransaction, error) {
 	url := fmt.Sprintf("%v%v?l2Hash=%v",
 		baseUrl,
-		TransactionsDetailsEndpoint,
+		transactionsDetailsEndpoint,
 		l2Hash,
 	)
-	response, err := Get[L2HashTransactionResponse](url)
+	response, err := get[l2HashTransactionResponse](url)
 	return response.Transaction, err
 }
 
-func getByOwnerAndIdentifier(baseUrl string, coinSymbol NetworkSymbol, identifier string, identity string) (IGetByOwnerAndIdentifierResponse, error) {
+func getByOwnerAndIdentifier(baseUrl string, coinSymbol NetworkSymbol, identifier string, identity string) (iGetByOwnerAndIdentifierResponse, error) {
 	url := fmt.Sprintf("%v%v?identity=%v&identifier=%v&coinSymbol=%v&usePreSeed=true",
 		baseUrl,
-		IdentifierLookupEndpoint,
+		identifierLookupEndpoint,
 		identity,
 		identifier,
 		coinSymbol,
 	)
-	return Get[IGetByOwnerAndIdentifierResponse](url)
+	return get[iGetByOwnerAndIdentifierResponse](url)
 }
 
-func createDepositOrder(baseUrl string, payload ICreateDepositOrder) (ICreateDepositOrderResponse, error) {
-	url := fmt.Sprintf("%v%v", baseUrl, CreateDepositOrderEndpoint)
-	return Post[ICreateDepositOrderResponse](url, payload)
+func createDepositOrder(baseUrl string, payload iCreateDepositOrder) (iCreateDepositOrderResponse, error) {
+	url := fmt.Sprintf("%v%v", baseUrl, createDepositOrderEndpoint)
+	return post[iCreateDepositOrderResponse](url, payload)
 }
 
 /**
@@ -234,10 +234,10 @@ func getKeysByOwnerAndIdentifier(
 	baseUrl string,
 	identity string,
 	identifier string,
-) ([]IKeyByOwnerAndIdentifierResponse, error) {
+) ([]iKeyByOwnerAndIdentifierResponse, error) {
 	Params := url.Values{}
 	Params.Set("identity", identity)
 	Params.Set("identifier", identifier)
-	url := fmt.Sprintf("%v%v?%v", baseUrl, AllKeysOfIdentifierEndpoint, Params.Encode())
-	return Get[[]IKeyByOwnerAndIdentifierResponse](url)
+	url := fmt.Sprintf("%v%v?%v", baseUrl, allKeysOfIdentifierEndpoint, Params.Encode())
+	return get[[]iKeyByOwnerAndIdentifierResponse](url)
 }

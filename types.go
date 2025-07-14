@@ -92,15 +92,15 @@ type IDepositAddress struct {
 	MarkupPercentage  float64
 }
 
-type IGetByOwnerAndIdentifierResponse struct {
+type iGetByOwnerAndIdentifierResponse struct {
 	Address            string `json:"address,omitempty"`
 	UnassignedLedgerId string `json:"unassignedLedgerId,omitempty"`
 }
-type IRequestedValue struct {
+type iRequestedValue struct {
 	Currency Currency `json:"currency,omitempty"`
 	Amount   string   `json:"amount,omitempty"`
 }
-type ICreateDepositOrderResponse struct {
+type iCreateDepositOrderResponse struct {
 	Id                string        `json:"id"`
 	ReferenceId       string        `json:"referenceId,omitempty"`
 	Identifier        string        `json:"identifier"`
@@ -115,7 +115,7 @@ type ICreateDepositOrderResponse struct {
 	MarkupPercentage  float64       `json:"markupPercentage,omitempty"`
 }
 
-type ICreateDepositOrder struct {
+type iCreateDepositOrder struct {
 	Identity         string           `json:"identity"`
 	Expires          int64            `json:"expires"`
 	ReferenceId      string           `json:"referenceId"`
@@ -123,14 +123,14 @@ type ICreateDepositOrder struct {
 	ToAddress        string           `json:"toAddress,omitempty"`
 	CoinSymbol       NetworkSymbol    `json:"coinSymbol,omitempty"`
 	TokenSymbol      TokenSymbol      `json:"tokenSymbol,omitempty"`
-	RequestedValue   *IRequestedValue `json:"requestedValue,omitempty"`
+	RequestedValue   *iRequestedValue `json:"requestedValue,omitempty"`
 	Signature        string           `json:"signature,omitempty"`
 	MarkupPercentage float64          `json:"markupPercentage,omitempty"`
 }
-type IKeyByOwnerAndIdentifierResponse struct {
+type iKeyByOwnerAndIdentifierResponse struct {
 	CoinSymbol NetworkSymbol `json:"coinSymbol,omitempty"`
 	Address    string        `json:"address,omitempty"`
 }
 type KeyResponseWrapper struct {
-	Data []IKeyByOwnerAndIdentifierResponse `json:"data"`
+	Data []iKeyByOwnerAndIdentifierResponse `json:"data"`
 }

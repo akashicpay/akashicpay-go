@@ -43,13 +43,13 @@ const (
 )
 
 type AkashicPay struct {
-	IsFxBp        bool
-	Otk           Otk
-	TargetNode    ACNode
-	AkashicUrl    string
-	AkashicPayUrl string
+	TargetNode    acNode
 	Env           Environment
 	ApiSecret     string
+	isFxBp        bool
+	otk           Otk
+	akashicUrl    string
+	akashicPayUrl string
 }
 
 type Balance struct {
@@ -78,23 +78,23 @@ func NewAkashicPay(privateKey string, identity string, env Environment, apiSecre
 		return nil, err
 	}
 	if !isBp.IsBp {
-		return nil, NewAkashicError(AkashicErrorCodeIsNotBp, "")
+		return nil, newAkashicError(akashicErrorCodeIsNotBp, "")
 	}
 
 	return &AkashicPay{
-		IsFxBp:        isBp.IsFxBp,
 		TargetNode:    fastestNode,
-		AkashicUrl:    urls.AkashicUrl,
-		AkashicPayUrl: urls.AkashicPayUrl,
 		Env:           env,
 		ApiSecret:     apiSecret,
-		Otk:           otk,
+		otk:           otk,
+		isFxBp:        isBp.IsFxBp,
+		akashicUrl:    urls.AkashicUrl,
+		akashicPayUrl: urls.AkashicPayUrl,
 	}, nil
 }
 
 // Get total balances, divided by Network and Token
 func (ap *AkashicPay) GetBalance() ([]Balance, error) {
-	ownerDetails, err := getBalance(ap.AkashicUrl, ap.Otk.Identity)
+	ownerDetails, err := getBalance(ap.akashicUrl, ap.otk.Identity)
 
 	if err != nil {
 		return nil, err
@@ -127,7 +127,7 @@ func (ap *AkashicPay) Payout(recipientId string, to string, amount string, netwo
 	InitiatedToNonL2 := ""
 	IsL2 := false
 
-	DecimalAmount, err := ConvertToSmallestUnit(amount, network, token)
+	DecimalAmount, err := convertToSmallestUnit(amount, network, token)
 	if err != nil {
 		return "", err
 	}
@@ -138,11 +138,11 @@ func (ap *AkashicPay) Payout(recipientId string, to string, amount string, netwo
 		return "", err
 	}
 
-	InputIsL1, err := regexp.MatchString(NetworkDictionary[network].AddressRegex, to)
+	InputIsL1, err := regexp.MatchString(networkDictionary[network].AddressRegex, to)
 	if err != nil {
 		return "", err
 	}
-	InputIsL2, err := regexp.MatchString(L2RegexWithOptionalPrefix, to)
+	InputIsL2, err := regexp.MatchString(l2RegexWithOptionalPrefix, to)
 	if err != nil {
 		return "", err
 	}
@@ -155,13 +155,13 @@ func (ap *AkashicPay) Payout(recipientId string, to string, amount string, netwo
 		}
 	} else if InputIsL2 {
 		if L2Lookup.L2Address == "" {
-			return "", NewAkashicError(AkashicErrorCodeL2AddressNotFound, "")
+			return "", newAkashicError(akashicErrorCodeL2AddressNotFound, "")
 		}
 		IsL2 = true
 	} else {
 		// Must be alias
 		if L2Lookup.L2Address == "" {
-			return "", NewAkashicError(AkashicErrorCodeL2AddressNotFound, "")
+			return "", newAkashicError(akashicErrorCodeL2AddressNotFound, "")
 		}
 		ToAddress = L2Lookup.L2Address
 		InitiatedToNonL2 = to
@@ -170,21 +170,21 @@ func (ap *AkashicPay) Payout(recipientId string, to string, amount string, netwo
 
 	// L2
 	if IsL2 {
-		signedL2Tx, err := L2Transaction(ap.Env, ap.Otk, network, DecimalAmount, ToAddress, token, InitiatedToNonL2, recipientId, ap.IsFxBp)
+		signedL2Tx, err := l2Transaction(ap.Env, ap.otk, network, DecimalAmount, ToAddress, token, InitiatedToNonL2, recipientId, ap.isFxBp)
 		if err != nil {
 			return "", err
 		}
 
 		//If FX, double-sign on BE
-		if ap.IsFxBp {
-			res, err := prepareL2Txn(ap.AkashicUrl, PrepareL2TxnDto{SignedTx: signedL2Tx})
+		if ap.isFxBp {
+			res, err := prepareL2Txn(ap.akashicUrl, prepareL2TxnDto{SignedTx: signedL2Tx})
 			if err != nil {
 				return "", err
 			}
 			signedL2Tx = res.PreparedTxn
 		}
 
-		acRes, err := Post[ActiveLedgerResponse[any, any]](ap.TargetNode.Node, signedL2Tx)
+		acRes, err := post[activeLedgerResponse[any, any]](ap.TargetNode.Node, signedL2Tx)
 		if err != nil {
 			return "", err
 		}
@@ -193,36 +193,36 @@ func (ap *AkashicPay) Payout(recipientId string, to string, amount string, netwo
 			return "", acErr
 		}
 
-		return PrefixWithAS(acRes.Umid)
+		return prefixWithAS(acRes.Umid)
 	}
 
 	// L1
 
-	Payload := PrepareTxnDto{
+	Payload := prepareTxnDto{
 		ToAddress:             to,
 		Amount:                amount,
 		NetworkSymbol:         network,
 		TokenSymbol:           token,
 		Identifier:            recipientId,
-		Identity:              ap.Otk.Identity,
-		FeeDelegationStrategy: FeeDelegationDelegate,
+		Identity:              ap.otk.Identity,
+		FeeDelegationStrategy: ffeeDelegationDelegate,
 	}
-	res, err := prepareL1Txn(ap.AkashicUrl, Payload)
+	res, err := prepareL1Txn(ap.akashicUrl, Payload)
 
 	if err != nil {
 		if strings.Contains(err.Error(), "exceeds total savings") {
-			return "", NewAkashicError(AkashicErrorCodeSavingsExceeded, "")
+			return "", newAkashicError(akashicErrorCodeSavingsExceeded, "")
 		}
 		return "", err
 	}
 
-	SignedTxn, err := signTransaction(res.PreparedTxn, ap.Otk)
+	SignedTxn, err := signTransaction(res.PreparedTxn, ap.otk)
 
 	if err != nil {
 		return "", err
 	}
 
-	acRes, err := Post[ActiveLedgerResponse[any, any]](ap.TargetNode.Node, SignedTxn)
+	acRes, err := post[activeLedgerResponse[any, any]](ap.TargetNode.Node, SignedTxn)
 
 	if err != nil {
 		return "", err
@@ -232,7 +232,7 @@ func (ap *AkashicPay) Payout(recipientId string, to string, amount string, netwo
 		return "", acErr
 	}
 
-	return PrefixWithAS(acRes.Umid)
+	return prefixWithAS(acRes.Umid)
 }
 
 func (ap *AkashicPay) GetDepositUrl(identifier string, referenceId string, receiveCurrencies []CryptoCurrency, redirectUrl string) (string, error) {
@@ -273,14 +273,14 @@ func (ap *AkashicPay) GetExchangeRates(requestedCurrency Currency) (IGetExchange
 	if requestedCurrency == "" {
 		return IGetExchangeRatesResult{}, errors.New("requestedCurrency may not be zero-valued")
 	}
-	return getExchangeRates(ap.AkashicUrl, requestedCurrency)
+	return getExchangeRates(ap.akashicUrl, requestedCurrency)
 }
 
 func (ap *AkashicPay) LookForL2Address(aliasOrL1OrL2Address string, network NetworkSymbol) (ILookForL2AddressResponse, error) {
 	if aliasOrL1OrL2Address == "" {
 		return ILookForL2AddressResponse{}, errors.New("aliasOrL1OrL2Address may not be zero-valued")
 	}
-	return getL2Lookup(ap.AkashicUrl, aliasOrL1OrL2Address, network)
+	return getL2Lookup(ap.akashicUrl, aliasOrL1OrL2Address, network)
 }
 
 func (ap *AkashicPay) GetTransfers(getTransactionParams IGetTransactions) ([]ITransaction, error) {
@@ -288,32 +288,32 @@ func (ap *AkashicPay) GetTransfers(getTransactionParams IGetTransactions) ([]ITr
 	if !validLimits[getTransactionParams.Limit] {
 		return nil, errors.New("limit must be one of 10, 25, 50, or 100")
 	}
-	return getTransfers(ap.AkashicUrl, ap.Otk.Identity, getTransactionParams)
+	return getTransfers(ap.akashicUrl, ap.otk.Identity, getTransactionParams)
 }
 
 func (ap *AkashicPay) GetTransactionDetails(l2Hash string) (ITransaction, error) {
 	if l2Hash == "" {
 		return ITransaction{}, errors.New("l2Hash may not be zero-valued")
 	}
-	return getTransactionDetails(ap.AkashicUrl, l2Hash)
+	return getTransactionDetails(ap.akashicUrl, l2Hash)
 }
 
 // Get the currently supported currencies in AkashicPay
 // Returns a map from currencies to a list of networks supported for that currency
 func (ap *AkashicPay) GetSupportedCurrencies() (map[CryptoCurrency][]NetworkSymbol, error) {
-	return getSupportedCurrencies(ap.AkashicUrl)
+	return getSupportedCurrencies(ap.akashicUrl)
 }
 
-func chooseBestACNode(env Environment) (ACNode, error) {
-	var nodes map[string]ACNode
+func chooseBestACNode(env Environment) (acNode, error) {
+	var nodes map[string]acNode
 	if env == Production {
-		nodes = ACNodes
+		nodes = acNodes
 	} else {
-		nodes = ACDevNodes
+		nodes = acDevNodes
 	}
 
 	type Result struct {
-		Node   ACNode
+		Node   acNode
 		Status int
 		Error  error
 	}
@@ -325,10 +325,10 @@ func chooseBestACNode(env Environment) (ACNode, error) {
 	// Use a goroutine to concurrently check node health
 	results := make(chan Result, len(nodes))
 	for _, node := range nodes {
-		go func(node ACNode) {
+		go func(node acNode) {
 			resp, err := http.Get(node.Node + "a/status")
 			if err != nil {
-				results <- Result{ACNode{}, 0, err}
+				results <- Result{acNode{}, 0, err}
 				return
 			}
 			defer resp.Body.Close()
@@ -336,14 +336,14 @@ func chooseBestACNode(env Environment) (ACNode, error) {
 			body, err := io.ReadAll(resp.Body)
 
 			if err != nil {
-				results <- Result{ACNode{}, 0, err}
+				results <- Result{acNode{}, 0, err}
 				return
 			}
 
 			var nodeData AcResponse
 			err = json.Unmarshal(body, &nodeData)
 			if err != nil {
-				results <- Result{ACNode{}, 0, err}
+				results <- Result{acNode{}, 0, err}
 				return
 			}
 
@@ -359,18 +359,18 @@ func chooseBestACNode(env Environment) (ACNode, error) {
 	}
 
 	// if we don't get any 4s we return an error
-	return ACNode{}, errors.New("no healthy AC node")
+	return acNode{}, errors.New("no healthy AC node")
 }
 
 func (ap *AkashicPay) getDepositUrlFunc(identifier string, referenceId string, receiveCurrencies []CryptoCurrency, redirectUrl string, requestedCurrency Currency, requestedAmount string, markupPercentage float64) (string, error) {
 	if identifier == "" {
 		return "", errors.New("identifier may not be zero-valued")
 	}
-	keys, err := getKeysByOwnerAndIdentifier(ap.AkashicUrl, ap.Otk.Identity, identifier)
+	keys, err := getKeysByOwnerAndIdentifier(ap.akashicUrl, ap.otk.Identity, identifier)
 	if err != nil {
 		return "", err
 	}
-	supportedCurrencies, err := getSupportedCurrencies(ap.AkashicUrl)
+	supportedCurrencies, err := getSupportedCurrencies(ap.akashicUrl)
 	if err != nil {
 		return "", err
 	}
@@ -395,8 +395,8 @@ func (ap *AkashicPay) getDepositUrlFunc(identifier string, referenceId string, r
 	}
 
 	if referenceId != "" {
-		payload := ICreateDepositOrder{
-			Identity:    ap.Otk.Identity,
+		payload := iCreateDepositOrder{
+			Identity:    ap.otk.Identity,
 			ReferenceId: referenceId,
 			Identifier:  identifier,
 			Expires:     time.Now().UnixMilli() + 60*1000,
@@ -405,24 +405,24 @@ func (ap *AkashicPay) getDepositUrlFunc(identifier string, referenceId string, r
 			payload.MarkupPercentage = markupPercentage
 		}
 		if requestedAmount != "" && requestedCurrency != "" {
-			payload.RequestedValue = &IRequestedValue{
+			payload.RequestedValue = &iRequestedValue{
 				Amount:   requestedAmount,
 				Currency: requestedCurrency,
 			}
 		}
-		signature, err := signData(payload, ap.Otk.privateKey)
+		signature, err := signData(payload, ap.otk.privateKey)
 		if err != nil {
 			return "", err
 		}
 		payload.Signature = signature
 		// create a deposit order
-		_, err = createDepositOrder(ap.AkashicUrl, payload)
+		_, err = createDepositOrder(ap.akashicUrl, payload)
 		if err != nil {
 			return "", err
 		}
 	}
 	params := url.Values{}
-	params.Set("identity", ap.Otk.Identity)
+	params.Set("identity", ap.otk.Identity)
 	params.Set("identifier", identifier)
 	if referenceId != "" {
 		params.Set("referenceId", referenceId)
@@ -433,14 +433,14 @@ func (ap *AkashicPay) getDepositUrlFunc(identifier string, referenceId string, r
 	if redirectUrl != "" {
 		params.Set("redirectUrl", base64.RawURLEncoding.EncodeToString([]byte(redirectUrl)))
 	}
-	return fmt.Sprintf("%v/sdk/deposit?%v", ap.AkashicPayUrl, params.Encode()), nil
+	return fmt.Sprintf("%v/sdk/deposit?%v", ap.akashicPayUrl, params.Encode()), nil
 }
 
 func (ap *AkashicPay) getDepositAddressFunc(network NetworkSymbol, identifier string, referenceId string, token TokenSymbol, requestedCurrency Currency, requestedAmount string, markupPercentage float64) (IDepositAddress, error) {
 	// Check environment and network compatibility
 	if (ap.Env == Development && (network == Ethereum_Mainnet || network == Tron)) ||
 		(ap.Env == Production && (network == Ethereum_Sepolia || network == Tron_Shasta)) {
-		return IDepositAddress{}, NewAkashicError(AkashicErrorCodeNetworkEnvironmentMismatch, "")
+		return IDepositAddress{}, newAkashicError(akashicErrorCodeNetworkEnvironmentMismatch, "")
 	}
 	if identifier == "" {
 		return IDepositAddress{}, errors.New("identifier may not be zero-valued")
@@ -448,18 +448,18 @@ func (ap *AkashicPay) getDepositAddressFunc(network NetworkSymbol, identifier st
 	if network == "" {
 		return IDepositAddress{}, errors.New("network may not be zero-valued")
 	}
-	response, err := getByOwnerAndIdentifier(ap.AkashicUrl, network, identifier, ap.Otk.Identity)
+	response, err := getByOwnerAndIdentifier(ap.akashicUrl, network, identifier, ap.otk.Identity)
 	if err != nil {
 		return IDepositAddress{}, err
 	}
 	if response.Address != "" {
 		if response.UnassignedLedgerId != "" {
-			tx, err := Assign(ap.Env, ap.Otk, response.UnassignedLedgerId, identifier)
+			tx, err := assign(ap.Env, ap.otk, response.UnassignedLedgerId, identifier)
 			if err != nil {
 				return IDepositAddress{}, err
 			}
 
-			acRes, err := Post[ActiveLedgerResponse[IKeyCreationResponse, any]](ap.TargetNode.Node, tx)
+			acRes, err := post[activeLedgerResponse[iKeyCreationResponse, any]](ap.TargetNode.Node, tx)
 			if err != nil {
 				return IDepositAddress{}, err
 			}
@@ -496,12 +496,12 @@ func (ap *AkashicPay) getDepositAddressFunc(network NetworkSymbol, identifier st
 	}
 
 	// If no address found, create a new key
-	tx, err := KeyCreateTransaction(ap.Env, network, ap.Otk)
+	tx, err := keyCreateTransaction(ap.Env, network, ap.otk)
 	if err != nil {
 		return IDepositAddress{}, err
 	}
 
-	createKeyRes, err := Post[ActiveLedgerResponse[IKeyCreationResponse, any]](ap.TargetNode.Node, tx)
+	createKeyRes, err := post[activeLedgerResponse[iKeyCreationResponse, any]](ap.TargetNode.Node, tx)
 	if err != nil {
 		return IDepositAddress{}, err
 	}
@@ -511,12 +511,12 @@ func (ap *AkashicPay) getDepositAddressFunc(network NetworkSymbol, identifier st
 	}
 	newKey := createKeyRes.Responses[0]
 
-	diffConTx, err := differentialConsensusTransaction(ap.Env, ap.Otk, newKey, identifier)
+	diffConTx, err := differentialConsensusTransaction(ap.Env, ap.otk, newKey, identifier)
 	if err != nil {
 		return IDepositAddress{}, err
 	}
 
-	diffConTxResp, err := Post[ActiveLedgerResponse[any, any]](ap.TargetNode.Node, diffConTx)
+	diffConTxResp, err := post[activeLedgerResponse[any, any]](ap.TargetNode.Node, diffConTx)
 	if err != nil {
 		return IDepositAddress{}, err
 	}
@@ -551,9 +551,9 @@ func (ap *AkashicPay) getDepositAddressFunc(network NetworkSymbol, identifier st
 	}, nil
 }
 
-func (ap *AkashicPay) createDepositPayloadAndOrder(referenceId string, identifier string, address string, network NetworkSymbol, tokenSymbol TokenSymbol, requestedCurrency Currency, requestedAmount string, markupPercentage float64) (ICreateDepositOrderResponse, error) {
-	payload := ICreateDepositOrder{
-		Identity:    ap.Otk.Identity,
+func (ap *AkashicPay) createDepositPayloadAndOrder(referenceId string, identifier string, address string, network NetworkSymbol, tokenSymbol TokenSymbol, requestedCurrency Currency, requestedAmount string, markupPercentage float64) (iCreateDepositOrderResponse, error) {
+	payload := iCreateDepositOrder{
+		Identity:    ap.otk.Identity,
 		Expires:     time.Now().UnixMilli() + 60*1000,
 		ReferenceId: referenceId,
 		Identifier:  identifier,
@@ -567,17 +567,17 @@ func (ap *AkashicPay) createDepositPayloadAndOrder(referenceId string, identifie
 	}
 
 	if requestedCurrency != "" && requestedAmount != "" {
-		payload.RequestedValue = &IRequestedValue{
+		payload.RequestedValue = &iRequestedValue{
 			Currency: requestedCurrency,
 			Amount:   requestedAmount,
 		}
 	}
 
-	signature, err := signData(payload, ap.Otk.privateKey)
+	signature, err := signData(payload, ap.otk.privateKey)
 	if err != nil {
-		return ICreateDepositOrderResponse{}, err
+		return iCreateDepositOrderResponse{}, err
 	}
 	createOrderPayload := payload
 	createOrderPayload.Signature = signature
-	return createDepositOrder(ap.AkashicUrl, createOrderPayload)
+	return createDepositOrder(ap.akashicUrl, createOrderPayload)
 }

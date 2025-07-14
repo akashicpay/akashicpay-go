@@ -13,11 +13,11 @@ import (
 	"github.com/titanous/bitcoin-crypto/bitelliptic"
 )
 
-const ACNamespace = "akashicchain"
-const ACNativeCoin = "#native"
+const acNamespace = "akashicchain"
+const acNativeCoin = "#native"
 
-// Contracts
-type Contracts struct {
+// contracts
+type contracts struct {
 	FxMultiSigner      string // Not a contract
 	Namespace          string // Also not a contract
 	Create             string
@@ -28,7 +28,7 @@ type Contracts struct {
 	CreateSecondaryOtk string
 }
 
-var ACMainNetContracts = Contracts{
+var acMainNetContracts = contracts{
 	FxMultiSigner:  "ASad1414566948845b404e8b6ac91639cc3643129d0ef8b7828ede7a0ac1044d6e",
 	Create:         "50e1372f0d3805dac4a51299bb0e99960862d7d01f247e85725d99011682b8ac@1",
 	CryptoTransfer: "2bae6ea681826c0307ee047ef68eb0cf53487a257c498de7d081d66de119d666@1",
@@ -37,7 +37,7 @@ var ACMainNetContracts = Contracts{
 	AssignKey:      "7afea15e8028af9f5aeafb6db6c0d2e8969c0c0492360ab15a6bc3754b818e19@1",
 }
 
-var ACTestNetContracts = Contracts{
+var acTestNetContracts = contracts{
 	FxMultiSigner:  "ASeffcb8790aff2439522ef4bd834cca5233dc1670e5fa1c93fa19305323937a17",
 	Create:         "ad171259a7c628ba6993c6bd555f07111525128194aa4226662e48a0b0a93116@1",
 	CryptoTransfer: "a32a8bc21ceaeeaa671573126a246c15ec4dc3a5c825e3cffc9441636019acb1@1",
@@ -46,15 +46,15 @@ var ACTestNetContracts = Contracts{
 	AssignKey:      "a6e95e2f563bdac69bfa265b1c215bf2125e1c50048f68f9c0b52982e320d675@1",
 }
 
-type ACTransaction struct {
-	TxObject  TxObject               `json:"$tx"`
+type acTransaction struct {
+	TxObject  txObject               `json:"$tx"`
 	SelfSign  bool                   `json:"$selfsign"`
 	Signature map[string]interface{} `json:"$sigs"`
 	Unanimous bool                   `json:"$unanimous"`
 }
 
-// TxObject within a transaction
-type TxObject struct {
+// txObject within a transaction
+type txObject struct {
 	Namespace string                 `json:"$namespace"`
 	Contract  string                 `json:"$contract"`
 	Entry     string                 `json:"$entry,omitempty"`
@@ -66,14 +66,14 @@ type TxObject struct {
 	Metadata  map[string]interface{} `json:"metadata,omitempty"`
 }
 
-type IKeyCreationResponse struct {
+type iKeyCreationResponse struct {
 	Id      string   `json:"id"`
 	Address string   `json:"address"`
 	Hashes  []string `json:"hashes"`
 }
 
 // AC Response
-type ActiveLedgerResponse[ResponseT, StreamT any] struct {
+type activeLedgerResponse[ResponseT, StreamT any] struct {
 	Umid    string `json:"$umid"`
 	Summary struct {
 		Total  int      `json:"total"`
@@ -140,26 +140,26 @@ func signData(data interface{}, privateKey string) (string, error) {
 }
 
 // signTransaction signs an ACTransaction and attaches the signature to its Signature map.
-func signTransaction(tx ACTransaction, otk Otk) (ACTransaction, error) {
+func signTransaction(tx acTransaction, otk Otk) (acTransaction, error) {
 	sign, err := signData(tx.TxObject, otk.privateKey)
 	if err != nil {
-		return ACTransaction{}, err
+		return acTransaction{}, err
 	}
 	tx.Signature[otk.Identity] = sign
 	return tx, nil
 }
 
-func KeyCreateTransaction(env Environment, coinSymbol NetworkSymbol, otk Otk) (ACTransaction, error) {
-	contracts := ACTestNetContracts
+func keyCreateTransaction(env Environment, coinSymbol NetworkSymbol, otk Otk) (acTransaction, error) {
+	contracts := acTestNetContracts
 	dbIndex := 15
 
 	if env == Production {
-		contracts = ACMainNetContracts
+		contracts = acMainNetContracts
 		dbIndex = 0
 	}
-	TxBody := ACTransaction{
-		TxObject: TxObject{
-			Namespace: ACNamespace,
+	TxBody := acTransaction{
+		TxObject: txObject{
+			Namespace: acNamespace,
 			Contract:  contracts.Create,
 			Input: map[string]interface{}{
 				"owner": map[string]interface{}{
@@ -178,7 +178,7 @@ func KeyCreateTransaction(env Environment, coinSymbol NetworkSymbol, otk Otk) (A
 }
 
 // Create and Sign an L2 transaction
-func L2Transaction(
+func l2Transaction(
 	env Environment,
 	otk Otk,
 	coinSymbol NetworkSymbol,
@@ -188,17 +188,17 @@ func L2Transaction(
 	initiatedToNonL2 string,
 	identifier string,
 	isFxBp bool,
-) (ACTransaction, error) {
+) (acTransaction, error) {
 	DbIndex := 15
-	Contracts := ACTestNetContracts
-	Token := ACNativeCoin
+	Contracts := acTestNetContracts
+	Token := acNativeCoin
 	Metadata := map[string]interface{}{
 		"identifier": identifier,
 	}
 
 	if env == Production {
 		DbIndex = 0
-		Contracts = ACMainNetContracts
+		Contracts = acMainNetContracts
 	}
 
 	if tokenSymbol != "" {
@@ -223,9 +223,9 @@ func L2Transaction(
 		Metadata["initiatedToNonL2"] = initiatedToNonL2
 	}
 
-	TxBody := ACTransaction{
-		TxObject: TxObject{
-			Namespace: ACNamespace,
+	TxBody := acTransaction{
+		TxObject: txObject{
+			Namespace: acNamespace,
 			Contract:  Contracts.CryptoTransfer,
 			Entry:     "transfer",
 			Input:     Input,
@@ -243,7 +243,7 @@ func L2Transaction(
 	return signTransaction(TxBody, otk)
 }
 
-func addExpireToTx(tx *ACTransaction) *ACTransaction {
+func addExpireToTx(tx *acTransaction) *acTransaction {
 	if tx.TxObject.Expire != "" {
 		return tx
 	}
@@ -251,7 +251,7 @@ func addExpireToTx(tx *ACTransaction) *ACTransaction {
 	return tx
 }
 
-func checkForAkashicChainError[T any](response ActiveLedgerResponse[T, any]) error {
+func checkForAkashicChainError[T any](response activeLedgerResponse[T, any]) error {
 	if response.Summary.Commit > 0 {
 		return nil
 	}
@@ -261,27 +261,27 @@ func checkForAkashicChainError[T any](response ActiveLedgerResponse[T, any]) err
 		[]string{"balance is not sufficient", "Couldn't parse integer", "Part-Balance to low"},
 		func(e string) bool { return strings.Contains(acErrorString, e) },
 	) {
-		return NewAkashicError(AkashicErrorCodeSavingsExceeded, "")
+		return newAkashicError(akashicErrorCodeSavingsExceeded, "")
 	}
 	if strings.Contains(acErrorString, "Stream(s) not found") {
-		return NewAkashicError(AkashicErrorCodeL2AddressNotFound, "")
+		return newAkashicError(akashicErrorCodeL2AddressNotFound, "")
 	}
-	return NewAkashicError(AkashicErrorCodeUnknownError, "AkashicChain Failure: "+acErrorString)
+	return newAkashicError(akashicErrorCodeUnknownError, "AkashicChain Failure: "+acErrorString)
 }
 
 // AssignKeyTransaction creates and signs a transaction to assign a key to a user identifier
-func Assign(env Environment, otk Otk, ledgerId string, identifier string) (ACTransaction, error) {
-	contracts := ACTestNetContracts
+func assign(env Environment, otk Otk, ledgerId string, identifier string) (acTransaction, error) {
+	contracts := acTestNetContracts
 	dbIndex := 15
 
 	if env == Production {
-		contracts = ACMainNetContracts
+		contracts = acMainNetContracts
 		dbIndex = 0
 	}
 
-	TxBody := ACTransaction{
-		TxObject: TxObject{
-			Namespace: ACNamespace,
+	TxBody := acTransaction{
+		TxObject: txObject{
+			Namespace: acNamespace,
 			Contract:  contracts.AssignKey,
 			Input: map[string]interface{}{
 				"owner": map[string]interface{}{
@@ -307,20 +307,20 @@ func Assign(env Environment, otk Otk, ledgerId string, identifier string) (ACTra
 func differentialConsensusTransaction(
 	env Environment,
 	otk Otk,
-	key IKeyCreationResponse,
+	key iKeyCreationResponse,
 	identifier string,
-) (ACTransaction, error) {
-	contracts := ACTestNetContracts
+) (acTransaction, error) {
+	contracts := acTestNetContracts
 	dbIndex := 15
 
 	if env == Production {
-		contracts = ACMainNetContracts
+		contracts = acMainNetContracts
 		dbIndex = 0
 	}
 
-	TxBody := ACTransaction{
-		TxObject: TxObject{
-			Namespace: ACNamespace,
+	TxBody := acTransaction{
+		TxObject: txObject{
+			Namespace: acNamespace,
 			Contract:  contracts.DiffConsensus,
 			Input: map[string]interface{}{
 				"owner": map[string]interface{}{

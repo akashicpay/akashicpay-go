@@ -1,11 +1,11 @@
 package akashicpay
 
-type ACNode struct {
+type acNode struct {
 	Minigate string
 	Node     string
 }
 
-var ACNodes = map[string]ACNode{
+var acNodes = map[string]acNode{
 	"Singapore1": {
 		Minigate: "https://sg1-minigate.akashicchain.com/",
 		Node:     "https://sg1.akashicchain.com/",
@@ -32,7 +32,7 @@ var ACNodes = map[string]ACNode{
 	},
 }
 
-var ACDevNodes = map[string]ACNode{
+var acDevNodes = map[string]acNode{
 	"Singapore1": {
 		Minigate: "https://sg1-minigate.testnet.akashicchain.com/",
 		Node:     "https://sg1.testnet.akashicchain.com/",

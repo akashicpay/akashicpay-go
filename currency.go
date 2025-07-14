@@ -34,7 +34,7 @@ const (
 
 // Method for safe conversion from the human-friendly, divisible units displayed
 // in the UI, to the smallest, indivisible coin/token unit.
-func ConvertToSmallestUnit(amount string, coinSymbol NetworkSymbol, tokenSymbol TokenSymbol) (string, error) {
+func convertToSmallestUnit(amount string, coinSymbol NetworkSymbol, tokenSymbol TokenSymbol) (string, error) {
 	conversionFactor, err := getConversionFactor(coinSymbol, tokenSymbol)
 	if err != nil {
 		return "", err
@@ -62,10 +62,10 @@ func ConvertToSmallestUnit(amount string, coinSymbol NetworkSymbol, tokenSymbol 
 
 func getConversionFactor(coinSymbol NetworkSymbol, tokenSymbol TokenSymbol) (int, error) {
 	if tokenSymbol == "" {
-		return NetworkDictionary[coinSymbol].NativeDecimal, nil
+		return networkDictionary[coinSymbol].NativeDecimal, nil
 	}
-	var token *Token
-	for _, t := range NetworkDictionary[coinSymbol].Tokens {
+	var token *token
+	for _, t := range networkDictionary[coinSymbol].Tokens {
 		if t.Symbol == tokenSymbol {
 			token = &t
 			break

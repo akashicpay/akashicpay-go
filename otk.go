@@ -9,7 +9,7 @@ import (
 	"github.com/btcsuite/btcd/btcec/v2"
 )
 
-const ACPrivateKeyRegex = `^0x[a-f\d]{64}$`
+const acPrivateKeyRegex = `^0x[a-f\d]{64}$`
 
 type Otk struct {
 	privateKey string
@@ -18,9 +18,9 @@ type Otk struct {
 }
 
 func reconstructOtkFromPrivateKey(privateKey string, identity string) (Otk, error) {
-	matchesRegex, _ := regexp.MatchString(ACPrivateKeyRegex, privateKey)
+	matchesRegex, _ := regexp.MatchString(acPrivateKeyRegex, privateKey)
 	if !matchesRegex {
-		return Otk{}, NewAkashicError(AkashicErrorCodeIncorrectPrivateKeyFormat, "")
+		return Otk{}, newAkashicError(akashicErrorCodeIncorrectPrivateKeyFormat, "")
 	}
 	// Remove 0x if there
 	privateKey = strings.TrimLeft(privateKey, "0x")

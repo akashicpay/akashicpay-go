@@ -16,10 +16,10 @@ const (
 	client  = "go-sdk"
 )
 
-var DefaultClient = &http.Client{}
+var defaultClient = &http.Client{}
 
 // TODO: Handle bad response statuses (400s etc.)
-func Get[T any](url string) (T, error) {
+func get[T any](url string) (T, error) {
 	var result T
 
 	request, err := http.NewRequest("GET", url, nil)
@@ -30,7 +30,7 @@ func Get[T any](url string) (T, error) {
 
 	setHeaders(request)
 
-	response, err := DefaultClient.Do(request)
+	response, err := defaultClient.Do(request)
 
 	if err != nil {
 		return result, err
@@ -56,7 +56,7 @@ func Get[T any](url string) (T, error) {
 }
 
 // Send a POST request. data should be a struct with json tags
-func Post[T any](url string, data any) (T, error) {
+func post[T any](url string, data any) (T, error) {
 	var result T
 
 	jsonData, err := json.Marshal(data)
@@ -74,7 +74,7 @@ func Post[T any](url string, data any) (T, error) {
 
 	setHeaders(request)
 
-	response, err := DefaultClient.Do(request)
+	response, err := defaultClient.Do(request)
 
 	if err != nil {
 		return result, err

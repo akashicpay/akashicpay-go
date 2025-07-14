@@ -1,21 +1,21 @@
 package akashicpay
 
-type Token struct {
+type token struct {
 	Decimal  int
 	Symbol   TokenSymbol
 	Contract string
 }
-type NetworkInfo struct {
+type networkInfo struct {
 	AddressRegex  string
 	NativeDecimal int
-	Tokens        []Token
+	Tokens        []token
 }
 
-var NetworkDictionary = map[NetworkSymbol]NetworkInfo{
+var networkDictionary = map[NetworkSymbol]networkInfo{
 	Ethereum_Mainnet: {
 		AddressRegex:  `^0x[A-Fa-f\d]{40}$`,
 		NativeDecimal: 18,
-		Tokens: []Token{
+		Tokens: []token{
 			{
 				Decimal:  6,
 				Symbol:   USDT,
@@ -26,7 +26,7 @@ var NetworkDictionary = map[NetworkSymbol]NetworkInfo{
 	Ethereum_Sepolia: {
 		AddressRegex:  `^0x[A-Fa-f\d]{40}$`,
 		NativeDecimal: 18,
-		Tokens: []Token{
+		Tokens: []token{
 			{
 				Decimal:  6,
 				Symbol:   USDT,
@@ -37,7 +37,7 @@ var NetworkDictionary = map[NetworkSymbol]NetworkInfo{
 	Tron: {
 		AddressRegex:  `^T[A-Za-z1-9]{33}$`,
 		NativeDecimal: 6,
-		Tokens: []Token{
+		Tokens: []token{
 			{
 				Decimal:  6,
 				Symbol:   USDT,
@@ -48,7 +48,7 @@ var NetworkDictionary = map[NetworkSymbol]NetworkInfo{
 	Tron_Shasta: {
 		AddressRegex:  `^T[A-Za-z1-9]{33}$`,
 		NativeDecimal: 6,
-		Tokens: []Token{
+		Tokens: []token{
 			{
 				Decimal:  6,
 				Symbol:   USDT,
