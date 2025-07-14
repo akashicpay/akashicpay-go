@@ -1,6 +1,8 @@
 package akashicpay
 
-import "fmt"
+import (
+	"fmt"
+)
 
 // AkashicScan Responses
 type IsBpResponse struct {
@@ -27,6 +29,8 @@ type ILookForL2AddressResponse struct {
 	L2Address string `json:"l2Address,omitempty"`
 	Alias     string `json:"alias,omitempty"`
 }
+
+type IGetExchangeRatesResult map[string]string
 
 // Akashic Endpoints
 const (
@@ -89,4 +93,15 @@ func getSupportedCurrencies(baseUrl string) (map[CryptoCurrency][]NetworkSymbol,
 	supportedCurrencies, err := Get[map[CryptoCurrency][]NetworkSymbol](url)
 
 	return supportedCurrencies, err
+}
+
+func getExchangeRates(baseUrl string, requestedCurrency Currency) (IGetExchangeRatesResult, error) {
+	url := fmt.Sprintf("%v%v/%v",
+		baseUrl,
+		ExchangeRatesEndpoint,
+		requestedCurrency,
+	)
+	exchangeRates, err := Get[IGetExchangeRatesResult](url)
+
+	return exchangeRates, err
 }

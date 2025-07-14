@@ -117,8 +117,8 @@ func (ap *AkashicPay) GetDepositUrl() {
 
 }
 
-func (ap *AkashicPay) GetExchangeRates() {
-
+func (ap *AkashicPay) GetExchangeRates(requestedCurrency Currency) (IGetExchangeRatesResult, error) {
+	return getExchangeRates(ap.AkashicUrl, requestedCurrency)
 }
 
 func (ap *AkashicPay) LookForL2Address(aliasOrL1OrL2Address string, network NetworkSymbol) (ILookForL2AddressResponse, error) {
