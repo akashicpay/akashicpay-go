@@ -110,28 +110,39 @@ func (ap *AkashicPay) GetBalance() ([]Balance, error) {
 	return balances, nil
 }
 
-// TODO: Implement below++
-func (ap *AkashicPay) Payout(RecipientId string, To string, Amount string, Network NetworkSymbol, Token TokenSymbol) (string, error) {
-	ToAddress := To
+func (ap *AkashicPay) Payout(recipientId string, to string, amount string, network NetworkSymbol, token TokenSymbol) (string, error) {
+	if recipientId == "" {
+		return "", errors.New("recipientId may not be zero-valued")
+	}
+	if to == "" {
+		return "", errors.New("to may not be zero-valued")
+	}
+	if amount == "" {
+		return "", errors.New("amount may not be zero-valued")
+	}
+	if network == "" {
+		return "", errors.New("network may not be zero-valued")
+	}
+	ToAddress := to
 	InitiatedToNonL2 := ""
 	IsL2 := false
 
-	DecimalAmount, err := ConvertToSmallestUnit(Amount, Network, Token)
+	DecimalAmount, err := ConvertToSmallestUnit(amount, network, token)
 	if err != nil {
 		return "", err
 	}
 
-	L2Lookup, err := ap.LookForL2Address(To, Network)
+	L2Lookup, err := ap.LookForL2Address(to, network)
 
 	if err != nil {
 		return "", err
 	}
 
-	InputIsL1, err := regexp.MatchString(NetworkDictionary[Network].AddressRegex, To)
+	InputIsL1, err := regexp.MatchString(NetworkDictionary[network].AddressRegex, to)
 	if err != nil {
 		return "", err
 	}
-	InputIsL2, err := regexp.MatchString(L2RegexWithOptionalPrefix, To)
+	InputIsL2, err := regexp.MatchString(L2RegexWithOptionalPrefix, to)
 	if err != nil {
 		return "", err
 	}
@@ -139,7 +150,7 @@ func (ap *AkashicPay) Payout(RecipientId string, To string, Amount string, Netwo
 	if InputIsL1 {
 		if L2Lookup.L2Address != "" {
 			ToAddress = L2Lookup.L2Address
-			InitiatedToNonL2 = To
+			InitiatedToNonL2 = to
 			IsL2 = true
 		}
 	} else if InputIsL2 {
@@ -153,13 +164,13 @@ func (ap *AkashicPay) Payout(RecipientId string, To string, Amount string, Netwo
 			return "", NewAkashicError(AkashicErrorCodeL2AddressNotFound, "")
 		}
 		ToAddress = L2Lookup.L2Address
-		InitiatedToNonL2 = To
+		InitiatedToNonL2 = to
 		IsL2 = true
 	}
 
 	// L2
 	if IsL2 {
-		signedL2Tx, err := L2Transaction(ap.Env, ap.Otk, Network, DecimalAmount, ToAddress, Token, InitiatedToNonL2, RecipientId, ap.IsFxBp)
+		signedL2Tx, err := L2Transaction(ap.Env, ap.Otk, network, DecimalAmount, ToAddress, token, InitiatedToNonL2, recipientId, ap.IsFxBp)
 		if err != nil {
 			return "", err
 		}
@@ -188,11 +199,11 @@ func (ap *AkashicPay) Payout(RecipientId string, To string, Amount string, Netwo
 	// L1
 
 	Payload := PrepareTxnDto{
-		ToAddress:             To,
-		Amount:                Amount,
-		NetworkSymbol:         Network,
-		TokenSymbol:           Token,
-		Identifier:            RecipientId,
+		ToAddress:             to,
+		Amount:                amount,
+		NetworkSymbol:         network,
+		TokenSymbol:           token,
+		Identifier:            recipientId,
 		Identity:              ap.Otk.Identity,
 		FeeDelegationStrategy: FeeDelegationDelegate,
 	}
@@ -229,6 +240,15 @@ func (ap *AkashicPay) GetDepositUrl(identifier string, referenceId string, recei
 }
 
 func (ap *AkashicPay) GetDepositUrlWithRequestedValue(identifier string, referenceId string, receiveCurrencies []Currency, redirectUrl string, requestedCurrency Currency, requestedAmount string, markupPercentage float64) (string, error) {
+	if referenceId == "" {
+		return "", errors.New("referenceId may not be zero-valued")
+	}
+	if requestedCurrency == "" {
+		return "", errors.New("requestedCurrency may not be zero-valued")
+	}
+	if requestedAmount == "" {
+		return "", errors.New("requestedAmount may not be zero-valued")
+	}
 	return ap.getDepositUrlFunc(identifier, referenceId, receiveCurrencies, redirectUrl, requestedCurrency, requestedAmount, markupPercentage)
 }
 
@@ -237,14 +257,29 @@ func (ap *AkashicPay) GetDepositAddress(network NetworkSymbol, identifier string
 }
 
 func (ap *AkashicPay) GetDepositAddressWithRequestedValue(network NetworkSymbol, identifier string, referenceId string, requestedCurrency Currency, requestedAmount string, token TokenSymbol, markupPercentage float64) (IDepositAddress, error) {
+	if referenceId == "" {
+		return IDepositAddress{}, errors.New("referenceId may not be zero-valued")
+	}
+	if requestedCurrency == "" {
+		return IDepositAddress{}, errors.New("requestedCurrency may not be zero-valued")
+	}
+	if requestedAmount == "" {
+		return IDepositAddress{}, errors.New("requestedAmount may not be zero-valued")
+	}
 	return ap.getDepositAddressFunc(network, identifier, referenceId, token, requestedCurrency, requestedAmount, markupPercentage)
 }
 
 func (ap *AkashicPay) GetExchangeRates(requestedCurrency Currency) (IGetExchangeRatesResult, error) {
+	if requestedCurrency == "" {
+		return IGetExchangeRatesResult{}, errors.New("requestedCurrency may not be zero-valued")
+	}
 	return getExchangeRates(ap.AkashicUrl, requestedCurrency)
 }
 
 func (ap *AkashicPay) LookForL2Address(aliasOrL1OrL2Address string, network NetworkSymbol) (ILookForL2AddressResponse, error) {
+	if aliasOrL1OrL2Address == "" {
+		return ILookForL2AddressResponse{}, errors.New("aliasOrL1OrL2Address may not be zero-valued")
+	}
 	return getL2Lookup(ap.AkashicUrl, aliasOrL1OrL2Address, network)
 }
 
@@ -257,6 +292,9 @@ func (ap *AkashicPay) GetTransfers(getTransactionParams IGetTransactions) ([]ITr
 }
 
 func (ap *AkashicPay) GetTransactionDetails(l2Hash string) (ITransaction, error) {
+	if l2Hash == "" {
+		return ITransaction{}, errors.New("l2Hash may not be zero-valued")
+	}
 	return getTransactionDetails(ap.AkashicUrl, l2Hash)
 }
 
@@ -325,6 +363,9 @@ func chooseBestACNode(env Environment) (ACNode, error) {
 }
 
 func (ap *AkashicPay) getDepositUrlFunc(identifier string, referenceId string, receiveCurrencies []Currency, redirectUrl string, requestedCurrency Currency, requestedAmount string, markupPercentage float64) (string, error) {
+	if identifier == "" {
+		return "", errors.New("identifier may not be zero-valued")
+	}
 	keys, err := getKeysByOwnerAndIdentifier(ap.AkashicUrl, ap.Otk.Identity, identifier)
 	if err != nil {
 		return "", err
@@ -400,6 +441,12 @@ func (ap *AkashicPay) getDepositAddressFunc(network NetworkSymbol, identifier st
 	if (ap.Env == Development && (network == Ethereum_Mainnet || network == Tron)) ||
 		(ap.Env == Production && (network == Ethereum_Sepolia || network == Tron_Shasta)) {
 		return IDepositAddress{}, NewAkashicError(AkashicErrorCodeNetworkEnvironmentMismatch, "")
+	}
+	if identifier == "" {
+		return IDepositAddress{}, errors.New("identifier may not be zero-valued")
+	}
+	if network == "" {
+		return IDepositAddress{}, errors.New("network may not be zero-valued")
 	}
 	response, err := getByOwnerAndIdentifier(ap.AkashicUrl, network, identifier, ap.Otk.Identity)
 	if err != nil {
