@@ -68,7 +68,7 @@ func RemoveASPrefix(umid string) (string, error) {
 }
 
 // Converts a slice of Currency to a slice of strings.
-func currencySliceToStringSlice(currencies []Currency) []string {
+func cryptoCurrencySliceToStringSlice(currencies []CryptoCurrency) []string {
 	result := make([]string, len(currencies))
 	for i, c := range currencies {
 		result[i] = string(c) // explicit conversion

@@ -36,10 +36,10 @@ const (
 
 // Currencies supported by AkashicPay, includes native coins and tokens
 const (
-	USDT_C CryptoCurrency = "USDT"
-	TRX    CryptoCurrency = "TRX"
-	ETH    CryptoCurrency = "ETH"
-	SEP    CryptoCurrency = "SEP"
+	CryptoUSDT CryptoCurrency = "USDT"
+	CryptoTRX  CryptoCurrency = "TRX"
+	CryptoETH  CryptoCurrency = "ETH"
+	CryptoSEP  CryptoCurrency = "SEP"
 )
 
 type AkashicPay struct {
@@ -235,11 +235,11 @@ func (ap *AkashicPay) Payout(recipientId string, to string, amount string, netwo
 	return PrefixWithAS(acRes.Umid)
 }
 
-func (ap *AkashicPay) GetDepositUrl(identifier string, referenceId string, receiveCurrencies []Currency, redirectUrl string) (string, error) {
+func (ap *AkashicPay) GetDepositUrl(identifier string, referenceId string, receiveCurrencies []CryptoCurrency, redirectUrl string) (string, error) {
 	return ap.getDepositUrlFunc(identifier, referenceId, receiveCurrencies, redirectUrl, "", "", 0)
 }
 
-func (ap *AkashicPay) GetDepositUrlWithRequestedValue(identifier string, referenceId string, receiveCurrencies []Currency, redirectUrl string, requestedCurrency Currency, requestedAmount string, markupPercentage float64) (string, error) {
+func (ap *AkashicPay) GetDepositUrlWithRequestedValue(identifier string, referenceId string, receiveCurrencies []CryptoCurrency, redirectUrl string, requestedCurrency Currency, requestedAmount string, markupPercentage float64) (string, error) {
 	if referenceId == "" {
 		return "", errors.New("referenceId may not be zero-valued")
 	}
@@ -362,7 +362,7 @@ func chooseBestACNode(env Environment) (ACNode, error) {
 	return ACNode{}, errors.New("no healthy AC node")
 }
 
-func (ap *AkashicPay) getDepositUrlFunc(identifier string, referenceId string, receiveCurrencies []Currency, redirectUrl string, requestedCurrency Currency, requestedAmount string, markupPercentage float64) (string, error) {
+func (ap *AkashicPay) getDepositUrlFunc(identifier string, referenceId string, receiveCurrencies []CryptoCurrency, redirectUrl string, requestedCurrency Currency, requestedAmount string, markupPercentage float64) (string, error) {
 	if identifier == "" {
 		return "", errors.New("identifier may not be zero-valued")
 	}
@@ -428,7 +428,7 @@ func (ap *AkashicPay) getDepositUrlFunc(identifier string, referenceId string, r
 		params.Set("referenceId", referenceId)
 	}
 	if len(receiveCurrencies) > 0 {
-		params.Set("receiveCurrencies", strings.Join(currencySliceToStringSlice(receiveCurrencies), ","))
+		params.Set("receiveCurrencies", strings.Join(cryptoCurrencySliceToStringSlice(receiveCurrencies), ","))
 	}
 	if redirectUrl != "" {
 		params.Set("redirectUrl", base64.RawURLEncoding.EncodeToString([]byte(redirectUrl)))

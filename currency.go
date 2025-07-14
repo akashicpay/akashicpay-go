@@ -5,6 +5,33 @@ import (
 	"math/big"
 )
 
+type Currency string
+
+// Fiat- and Crypto-currencies for setting amounts in deposit-orders
+const (
+	// Crypto
+	CurrencyUSDT Currency = "USDT"
+	CurrencyTRX  Currency = "TRX"
+	CurrencyETH  Currency = "ETH"
+
+	// Fiat
+	CurrencyCHF Currency = "CHF"
+	CurrencyCNY Currency = "CNY"
+	CurrencyEUR Currency = "EUR"
+	CurrencyHKD Currency = "HKD"
+	CurrencyIDR Currency = "IDR"
+	CurrencyJPY Currency = "JPY"
+	CurrencyKHR Currency = "KHR"
+	CurrencyKRW Currency = "KRW"
+	CurrencyMYR Currency = "MYR"
+	CurrencyPHP Currency = "PHP"
+	CurrencySGD Currency = "SGD"
+	CurrencyTHB Currency = "THB"
+	CurrencyTWD Currency = "TWD"
+	CurrencyUSD Currency = "USD"
+	CurrencyVND Currency = "VND"
+)
+
 // Method for safe conversion from the human-friendly, divisible units displayed
 // in the UI, to the smallest, indivisible coin/token unit.
 func ConvertToSmallestUnit(amount string, coinSymbol NetworkSymbol, tokenSymbol TokenSymbol) (string, error) {
