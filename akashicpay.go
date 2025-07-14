@@ -405,7 +405,7 @@ func (ap *AkashicPay) getDepositUrlFunc(identifier string, referenceId string, r
 			Expires:     time.Now().UnixMilli() + 60*1000,
 		}
 		if markupPercentage != 0 {
-			payload.MarkupPercentage = markupPercentage
+			payload.MarkupPercentage = fmt.Sprintf("%f", markupPercentage)
 		}
 		if requestedAmount != "" && requestedCurrency != "" {
 			payload.RequestedValue = &iRequestedValue{
@@ -566,7 +566,7 @@ func (ap *AkashicPay) createDepositPayloadAndOrder(referenceId string, identifie
 	}
 
 	if markupPercentage != 0 {
-		payload.MarkupPercentage = markupPercentage
+		payload.MarkupPercentage = fmt.Sprintf("%f", markupPercentage)
 	}
 
 	if requestedCurrency != "" && requestedAmount != "" {

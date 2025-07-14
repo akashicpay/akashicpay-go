@@ -89,7 +89,7 @@ type IDepositAddress struct {
 	ExchangeRate      string
 	Amount            string
 	Expires           string
-	MarkupPercentage  float64
+	MarkupPercentage  string
 }
 
 type iGetByOwnerAndIdentifierResponse struct {
@@ -112,7 +112,7 @@ type iCreateDepositOrderResponse struct {
 	Amount            string        `json:"amount,omitempty"`
 	ExchangeRate      string        `json:"exchangeRate,omitempty"`
 	Expires           string        `json:"expires"`
-	MarkupPercentage  float64       `json:"markupPercentage,omitempty"`
+	MarkupPercentage  string        `json:"markupPercentage,omitempty"`
 }
 
 type iCreateDepositOrder struct {
@@ -125,7 +125,7 @@ type iCreateDepositOrder struct {
 	TokenSymbol      TokenSymbol      `json:"tokenSymbol,omitempty"`
 	RequestedValue   *iRequestedValue `json:"requestedValue,omitempty"`
 	Signature        string           `json:"signature,omitempty"`
-	MarkupPercentage float64          `json:"markupPercentage,omitempty"`
+	MarkupPercentage string           `json:"markupPercentage,omitempty"`
 }
 type iKeyByOwnerAndIdentifierResponse struct {
 	CoinSymbol NetworkSymbol `json:"coinSymbol,omitempty"`
