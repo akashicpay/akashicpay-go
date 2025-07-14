@@ -1,4 +1,4 @@
-module github.com/akashicpay/akashicpay-go.git
+module github.com/akashicpay/akashicpay-go
 
 go 1.24.4
 
