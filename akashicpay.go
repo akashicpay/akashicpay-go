@@ -21,7 +21,7 @@ const (
 
 const (
 	Tron             NetworkSymbol = "TRX"
-	Tron_Shasta      NetworkSymbol = "TRX_SHASTA"
+	Tron_Shasta      NetworkSymbol = "TRX-SHASTA"
 	Ethereum_Mainnet NetworkSymbol = "ETH"
 	Ethereum_Sepolia NetworkSymbol = "SEP"
 )
