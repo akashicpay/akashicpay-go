@@ -23,7 +23,7 @@ type prepareTxnDto struct {
 	Amount                string                `json:"amount"`
 	TokenSymbol           TokenSymbol           `json:"tokenSymbol,omitempty"`
 	Identity              string                `json:"identity"`
-	ReferenceId           string                `json:"referenceId"`
+	Identifier            string                `json:"identifier"`
 	FeeDelegationStrategy feeDelegationStrategy `json:"feeDelegationStrategy"`
 }
 type prepareL2TxnDto struct {
@@ -194,6 +194,12 @@ func getTransfersQueryParams(params IGetTransactions, identity string) string {
 	}
 	if params.HideSmallTransactions {
 		values = append(values, "hideSmallTransactions=true")
+	}
+	if params.Identifier != "" {
+		values = append(values, "identifier="+params.Identifier)
+	}
+	if params.ReferenceId != "" {
+		values = append(values, "referenceId="+params.ReferenceId)
 	}
 	values = append(values, "identity="+identity)
 	return joinQueryParams(values)

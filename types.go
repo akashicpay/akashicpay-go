@@ -76,6 +76,8 @@ type IGetTransactions struct {
 	Status                TransactionStatus // Transaction status: Pending, Confirmed, or Failed
 	TransactionType       TransactionType   // Transaction type: Deposit or Withdrawal (Payout)
 	HideSmallTransactions bool              // Excludes transactions below 1 USD in value
+	Identifier            string            // Optional identifier to filter transactions by user
+	ReferenceId           string            // Optional reference ID to filter transactions
 }
 
 type IDepositAddress struct {
