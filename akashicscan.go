@@ -23,7 +23,7 @@ type prepareTxnDto struct {
 	Amount                string                `json:"amount"`
 	TokenSymbol           TokenSymbol           `json:"tokenSymbol,omitempty"`
 	Identity              string                `json:"identity"`
-	Identifier            string                `json:"identifier"`
+	ReferenceId           string                `json:"referenceId"`
 	FeeDelegationStrategy feeDelegationStrategy `json:"feeDelegationStrategy"`
 }
 type prepareL2TxnDto struct {
