@@ -60,6 +60,15 @@ func cryptoCurrencySliceToStringSlice(currencies []CryptoCurrency) []string {
 	return result
 }
 
+// Converts a slice of Network to a slice of strings.
+func networkSliceToStringSlice(networks []NetworkSymbol) []string {
+	result := make([]string, len(networks))
+	for i, n := range networks {
+		result[i] = string(n) // explicit conversion
+	}
+	return result
+}
+
 // maps USDT to TETHER for Tron Shasta, returns nil if token is empty
 func mapUSDTToTether(network NetworkSymbol, token TokenSymbol) TokenSymbol {
 	if network == Tron_Shasta && token == USDT {

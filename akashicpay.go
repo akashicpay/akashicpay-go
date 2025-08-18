@@ -32,12 +32,10 @@ const (
 
 // Network supported by AkashicPay, test- and mainnets
 const (
-	Tron                        NetworkSymbol = "TRX"
-	Tron_Shasta                 NetworkSymbol = "TRX-SHASTA"
-	Ethereum_Mainnet            NetworkSymbol = "ETH"
-	Ethereum_Sepolia            NetworkSymbol = "SEP"
-	Binance_Smart_Chain_Mainnet NetworkSymbol = "BNB"
-	Binance_Smart_Chain_Testnet NetworkSymbol = "tBNB"
+	Tron             NetworkSymbol = "TRX"
+	Tron_Shasta      NetworkSymbol = "TRX-SHASTA"
+	Ethereum_Mainnet NetworkSymbol = "ETH"
+	Ethereum_Sepolia NetworkSymbol = "SEP"
 )
 
 // Tokens supported by AkashicPay
@@ -124,16 +122,17 @@ func (ap *AkashicPay) GetBalance() ([]Balance, error) {
 
 // Send a crypto-transaction
 //
-// referenceId is the userId or similar identifier for identifying the transaction
+// recipientId is the userId or similar identifier of the user requesting the
+// payout
 //
 // to is the L1 or L2 address of the receiver
 //
 // Supply a zero-valued token to send native coin ("")
 //
 // The return is the L2 hash of the transaction
-func (ap *AkashicPay) Payout(referenceId string, to string, amount string, network NetworkSymbol, token TokenSymbol) (string, error) {
-	if referenceId == "" {
-		return "", errors.New("referenceId may not be zero-valued")
+func (ap *AkashicPay) Payout(recipientId string, to string, amount string, network NetworkSymbol, token TokenSymbol) (string, error) {
+	if recipientId == "" {
+		return "", errors.New("recipientId may not be zero-valued")
 	}
 	if to == "" {
 		return "", errors.New("to may not be zero-valued")
@@ -192,7 +191,7 @@ func (ap *AkashicPay) Payout(referenceId string, to string, amount string, netwo
 	// L2
 	if IsL2 {
 		acToken := mapUSDTToTether(network, token)
-		signedL2Tx, err := l2Transaction(ap.Env, ap.otk, network, DecimalAmount, ToAddress, acToken, InitiatedToNonL2, referenceId, ap.isFxBp)
+		signedL2Tx, err := l2Transaction(ap.Env, ap.otk, network, DecimalAmount, ToAddress, acToken, InitiatedToNonL2, recipientId, ap.isFxBp)
 		if err != nil {
 			return "", err
 		}
@@ -225,7 +224,7 @@ func (ap *AkashicPay) Payout(referenceId string, to string, amount string, netwo
 		Amount:                amount,
 		NetworkSymbol:         network,
 		TokenSymbol:           token,
-		ReferenceId:           referenceId,
+		Identifier:            recipientId,
 		Identity:              ap.otk.Identity,
 		FeeDelegationStrategy: ffeeDelegationDelegate,
 	}
@@ -262,12 +261,14 @@ func (ap *AkashicPay) Payout(referenceId string, to string, amount string, netwo
 // receiveCurrencies specifies which currencies you would like displayed as
 // options on the page
 //
+// networks specifies which networks you would like displayed as options on the page
+//
 // referenceId is a parameter used to identify the order, can be left out ("")
 //
 // redirectUrl is a parameter which sets a URL to redirect to from the
 // deposit URL, can be left out ("")
-func (ap *AkashicPay) GetDepositUrl(identifier string, referenceId string, receiveCurrencies []CryptoCurrency, redirectUrl string) (string, error) {
-	return ap.getDepositUrlFunc(identifier, referenceId, receiveCurrencies, redirectUrl, "", "", 0)
+func (ap *AkashicPay) GetDepositUrl(identifier string, referenceId string, receiveCurrencies []CryptoCurrency, networks []NetworkSymbol, redirectUrl string) (string, error) {
+	return ap.getDepositUrlFunc(identifier, referenceId, receiveCurrencies, networks, redirectUrl, "", "", 0)
 }
 
 // Same as GetDepositUrl, but requires specifying the value of the deposit via
@@ -276,7 +277,7 @@ func (ap *AkashicPay) GetDepositUrl(identifier string, referenceId string, recei
 // unlike GetDepositUrl, referenceId must be specified
 //
 // Set the markupPercantage to adjust the exchange-rate for a markup/discount
-func (ap *AkashicPay) GetDepositUrlWithRequestedValue(identifier string, referenceId string, receiveCurrencies []CryptoCurrency, redirectUrl string, requestedCurrency Currency, requestedAmount string, markupPercentage float64) (string, error) {
+func (ap *AkashicPay) GetDepositUrlWithRequestedValue(identifier string, referenceId string, receiveCurrencies []CryptoCurrency, networks []NetworkSymbol, redirectUrl string, requestedCurrency Currency, requestedAmount string, markupPercentage float64) (string, error) {
 	if referenceId == "" {
 		return "", errors.New("referenceId may not be zero-valued")
 	}
@@ -286,7 +287,7 @@ func (ap *AkashicPay) GetDepositUrlWithRequestedValue(identifier string, referen
 	if requestedAmount == "" {
 		return "", errors.New("requestedAmount may not be zero-valued")
 	}
-	return ap.getDepositUrlFunc(identifier, referenceId, receiveCurrencies, redirectUrl, requestedCurrency, requestedAmount, markupPercentage)
+	return ap.getDepositUrlFunc(identifier, referenceId, receiveCurrencies, networks, redirectUrl, requestedCurrency, requestedAmount, markupPercentage)
 }
 
 // GetDepositAddress returns an L1-address on the specified network for a user
@@ -457,7 +458,7 @@ func chooseBestACNode(env Environment) (acNode, error) {
 	return acNode{}, errors.New("no healthy AC node")
 }
 
-func (ap *AkashicPay) getDepositUrlFunc(identifier string, referenceId string, receiveCurrencies []CryptoCurrency, redirectUrl string, requestedCurrency Currency, requestedAmount string, markupPercentage float64) (string, error) {
+func (ap *AkashicPay) getDepositUrlFunc(identifier string, referenceId string, receiveCurrencies []CryptoCurrency, networks []NetworkSymbol, redirectUrl string, requestedCurrency Currency, requestedAmount string, markupPercentage float64) (string, error) {
 	if identifier == "" {
 		return "", errors.New("identifier may not be zero-valued")
 	}
@@ -524,6 +525,9 @@ func (ap *AkashicPay) getDepositUrlFunc(identifier string, referenceId string, r
 	}
 	if len(receiveCurrencies) > 0 {
 		params.Set("receiveCurrencies", strings.Join(cryptoCurrencySliceToStringSlice(receiveCurrencies), ","))
+	}
+	if len(networks) > 0 {
+		params.Set("networks", strings.Join(networkSliceToStringSlice(networks), ","))
 	}
 	if redirectUrl != "" {
 		params.Set("redirectUrl", base64.RawURLEncoding.EncodeToString([]byte(redirectUrl)))
