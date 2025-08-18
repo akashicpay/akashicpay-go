@@ -34,6 +34,28 @@ var networkDictionary = map[NetworkSymbol]networkInfo{
 			},
 		},
 	},
+	Binance_Smart_Chain_Mainnet: {
+		AddressRegex:  `^0x[A-Fa-f\d]{40}$`,
+		NativeDecimal: 18,
+		Tokens: []token{
+			{
+				Decimal:  18,
+				Symbol:   USDT,
+				Contract: "0x55d398326f99059ff775485246999027b3197955",
+			},
+		},
+	},
+	Binance_Smart_Chain_Testnet: {
+		AddressRegex:  `^0x[A-Fa-f\d]{40}$`,
+		NativeDecimal: 18,
+		Tokens: []token{
+			{
+				Decimal:  18,
+				Symbol:   USDT,
+				Contract: "0xa62be7ec09f56a813f654a9ac1aa6d29d96f604e",
+			},
+		},
+	},
 	Tron: {
 		AddressRegex:  `^T[A-Za-z1-9]{33}$`,
 		NativeDecimal: 6,

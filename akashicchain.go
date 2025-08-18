@@ -96,6 +96,8 @@ func getACSymbol(coinSymbol NetworkSymbol) string {
 		return "trx"
 	case Ethereum_Mainnet, Ethereum_Sepolia:
 		return "eth"
+	case Binance_Smart_Chain_Mainnet, Binance_Smart_Chain_Testnet:
+		return "bnb"
 	default:
 		return string(coinSymbol)
 	}
@@ -108,6 +110,10 @@ func getACNetwork(coinSymbol NetworkSymbol) string {
 		return "ETH"
 	case Ethereum_Sepolia:
 		return "SEP"
+	case Binance_Smart_Chain_Mainnet:
+		return "BNB"
+	case Binance_Smart_Chain_Testnet:
+		return "tBNB"
 	case Tron:
 		return "trx"
 	case Tron_Shasta:

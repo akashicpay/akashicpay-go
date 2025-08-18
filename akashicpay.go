@@ -32,10 +32,12 @@ const (
 
 // Network supported by AkashicPay, test- and mainnets
 const (
-	Tron             NetworkSymbol = "TRX"
-	Tron_Shasta      NetworkSymbol = "TRX-SHASTA"
-	Ethereum_Mainnet NetworkSymbol = "ETH"
-	Ethereum_Sepolia NetworkSymbol = "SEP"
+	Tron                        NetworkSymbol = "TRX"
+	Tron_Shasta                 NetworkSymbol = "TRX-SHASTA"
+	Ethereum_Mainnet            NetworkSymbol = "ETH"
+	Ethereum_Sepolia            NetworkSymbol = "SEP"
+	Binance_Smart_Chain_Mainnet NetworkSymbol = "BNB"
+	Binance_Smart_Chain_Testnet NetworkSymbol = "tBNB"
 )
 
 // Tokens supported by AkashicPay
