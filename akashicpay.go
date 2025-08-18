@@ -113,7 +113,7 @@ func (ap *AkashicPay) GetBalance() ([]Balance, error) {
 	for i, v := range ownerDetails.TotalBalances {
 		balances[i] = Balance{
 			NetworkSymbol: v.CoinSymbol,
-			TokenSymbol:   normalizeTokenSymbol(v.TokenSymbol),
+			TokenSymbol:   v.TokenSymbol,
 			Balance:       v.Amount,
 		}
 	}
@@ -147,9 +147,7 @@ func (ap *AkashicPay) Payout(recipientId string, to string, amount string, netwo
 	InitiatedToNonL2 := ""
 	IsL2 := false
 
-	normalizedToken := normalizeTokenInput(network, token)
-
-	DecimalAmount, err := convertToSmallestUnit(amount, network, normalizedToken)
+	DecimalAmount, err := convertToSmallestUnit(amount, network, token)
 	if err != nil {
 		return "", err
 	}
@@ -192,7 +190,8 @@ func (ap *AkashicPay) Payout(recipientId string, to string, amount string, netwo
 
 	// L2
 	if IsL2 {
-		signedL2Tx, err := l2Transaction(ap.Env, ap.otk, network, DecimalAmount, ToAddress, normalizedToken, InitiatedToNonL2, recipientId, ap.isFxBp)
+		acToken := mapUSDTToTether(network, token)
+		signedL2Tx, err := l2Transaction(ap.Env, ap.otk, network, DecimalAmount, ToAddress, acToken, InitiatedToNonL2, recipientId, ap.isFxBp)
 		if err != nil {
 			return "", err
 		}
@@ -224,7 +223,7 @@ func (ap *AkashicPay) Payout(recipientId string, to string, amount string, netwo
 		ToAddress:             to,
 		Amount:                amount,
 		NetworkSymbol:         network,
-		TokenSymbol:           normalizedToken,
+		TokenSymbol:           token,
 		Identifier:            recipientId,
 		Identity:              ap.otk.Identity,
 		FeeDelegationStrategy: ffeeDelegationDelegate,

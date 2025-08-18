@@ -166,9 +166,6 @@ func getTransfers(baseUrl string, identity string, params IGetTransactions) ([]I
 	resp, err := get[transactionsResponse](url)
 
 	transactions := resp.Transactions
-	for _, t := range transactions {
-		t.TokenSymbol = normalizeTokenSymbol(t.TokenSymbol)
-	}
 	return transactions, err
 }
 
@@ -215,7 +212,6 @@ func getTransactionDetails(baseUrl string, l2Hash string) (ITransaction, error) 
 	response, err := get[l2HashTransactionResponse](url)
 
 	t := response.Transaction
-	t.TokenSymbol = normalizeTokenSymbol(t.TokenSymbol)
 	return t, err
 }
 
