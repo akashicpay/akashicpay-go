@@ -261,12 +261,12 @@ func checkForAkashicChainError[T any](response activeLedgerResponse[T, any]) err
 		[]string{"balance is not sufficient", "Couldn't parse integer", "Part-Balance to low"},
 		func(e string) bool { return strings.Contains(acErrorString, e) },
 	) {
-		return newAkashicError(akashicErrorCodeSavingsExceeded, "")
+		return newAkashicError(AkashicErrorCodeSavingsExceeded, "")
 	}
 	if strings.Contains(acErrorString, "Stream(s) not found") {
-		return newAkashicError(akashicErrorCodeL2AddressNotFound, "")
+		return newAkashicError(AkashicErrorCodeL2AddressNotFound, "")
 	}
-	return newAkashicError(akashicErrorCodeUnknownError, "AkashicChain Failure: "+acErrorString)
+	return newAkashicError(AkashicErrorCodeUnknownError, "AkashicChain Failure: "+acErrorString)
 }
 
 // AssignKeyTransaction creates and signs a transaction to assign a key to a user identifier

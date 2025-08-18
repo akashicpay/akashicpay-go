@@ -79,7 +79,7 @@ func NewAkashicPay(privateKey string, identity string, env Environment, apiSecre
 		return nil, err
 	}
 	if !isBp.IsBp {
-		return nil, newAkashicError(akashicErrorCodeIsNotBp, "")
+		return nil, newAkashicError(AkashicErrorCodeIsNotBp, "")
 	}
 
 	return &AkashicPay{
@@ -158,13 +158,13 @@ func (ap *AkashicPay) Payout(recipientId string, to string, amount string, netwo
 		}
 	} else if InputIsL2 {
 		if L2Lookup.L2Address == "" {
-			return "", newAkashicError(akashicErrorCodeL2AddressNotFound, "")
+			return "", newAkashicError(AkashicErrorCodeL2AddressNotFound, "")
 		}
 		IsL2 = true
 	} else {
 		// Must be alias
 		if L2Lookup.L2Address == "" {
-			return "", newAkashicError(akashicErrorCodeL2AddressNotFound, "")
+			return "", newAkashicError(AkashicErrorCodeL2AddressNotFound, "")
 		}
 		ToAddress = L2Lookup.L2Address
 		InitiatedToNonL2 = to
@@ -214,7 +214,7 @@ func (ap *AkashicPay) Payout(recipientId string, to string, amount string, netwo
 
 	if err != nil {
 		if strings.Contains(err.Error(), "exceeds total savings") {
-			return "", newAkashicError(akashicErrorCodeSavingsExceeded, "")
+			return "", newAkashicError(AkashicErrorCodeSavingsExceeded, "")
 		}
 		return "", err
 	}
@@ -443,7 +443,7 @@ func (ap *AkashicPay) getDepositAddressFunc(network NetworkSymbol, identifier st
 	// Check environment and network compatibility
 	if (ap.Env == Development && (network == Ethereum_Mainnet || network == Tron)) ||
 		(ap.Env == Production && (network == Ethereum_Sepolia || network == Tron_Shasta)) {
-		return IDepositAddress{}, newAkashicError(akashicErrorCodeNetworkEnvironmentMismatch, "")
+		return IDepositAddress{}, newAkashicError(AkashicErrorCodeNetworkEnvironmentMismatch, "")
 	}
 	if identifier == "" {
 		return IDepositAddress{}, errors.New("identifier may not be zero-valued")

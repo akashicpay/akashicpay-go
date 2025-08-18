@@ -20,7 +20,7 @@ type Otk struct {
 func reconstructOtkFromPrivateKey(privateKey string, identity string) (Otk, error) {
 	matchesRegex, _ := regexp.MatchString(acPrivateKeyRegex, privateKey)
 	if !matchesRegex {
-		return Otk{}, newAkashicError(akashicErrorCodeIncorrectPrivateKeyFormat, "")
+		return Otk{}, newAkashicError(AkashicErrorCodeIncorrectPrivateKeyFormat, "")
 	}
 	// Remove 0x if there
 	privateKey = strings.TrimLeft(privateKey, "0x")
