@@ -32,9 +32,10 @@ var akashicErrorDetail = map[AkashicErrorCode]string{
 	AkashicErrorCodeNetworkEnvironmentMismatch: "the L1-network does not match the SDK-environment",
 }
 
+// Custom error that implements the `error` interface
 type AkashicError struct {
-	Code    AkashicErrorCode
-	Details string
+	Code    AkashicErrorCode // Short error string
+	Details string           // Longer explanation of the error
 }
 
 func (e *AkashicError) Error() string {

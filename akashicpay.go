@@ -1,3 +1,7 @@
+// Package akashicpay provides functions to easily interact with the
+// AkashicChain network
+//
+// This includes making payouts, creating wallets for deposits, and querying transaction-details
 package akashicpay
 
 import (
@@ -23,6 +27,7 @@ const (
 	Production  Environment = "Production"
 )
 
+// Network supported by AkashicPay, test- and mainnets
 const (
 	Tron             NetworkSymbol = "TRX"
 	Tron_Shasta      NetworkSymbol = "TRX-SHASTA"
@@ -30,6 +35,7 @@ const (
 	Ethereum_Sepolia NetworkSymbol = "SEP"
 )
 
+// Tokens supported by AkashicPay
 const (
 	USDT   TokenSymbol = "USDT"
 	tether TokenSymbol = "Tether"
@@ -111,6 +117,16 @@ func (ap *AkashicPay) GetBalance() ([]Balance, error) {
 	return balances, nil
 }
 
+// Send a crypto-transaction
+//
+// recipientId is the userId or similar identifier of the user requesting the
+// payout
+//
+// to is the L1 or L2 address of the receiver
+//
+// Supply a zero-valued token to send native coin ("")
+//
+// The return is the L2 hash of the transaction
 func (ap *AkashicPay) Payout(recipientId string, to string, amount string, network NetworkSymbol, token TokenSymbol) (string, error) {
 	if recipientId == "" {
 		return "", errors.New("recipientId may not be zero-valued")
@@ -238,10 +254,25 @@ func (ap *AkashicPay) Payout(recipientId string, to string, amount string, netwo
 	return prefixWithAS(acRes.Umid)
 }
 
+// GetDepositUrl returns a url where a user can make deposits
+//
+// receiveCurrencies specifies which currencies you would like displayed as
+// options on the page
+//
+// referenceId is a parameter used to identify the order, can be left out ("")
+//
+// redirectUrl is a parameter which sets a URL to redirect to from the
+// deposit URL, can be left out ("")
 func (ap *AkashicPay) GetDepositUrl(identifier string, referenceId string, receiveCurrencies []CryptoCurrency, redirectUrl string) (string, error) {
 	return ap.getDepositUrlFunc(identifier, referenceId, receiveCurrencies, redirectUrl, "", "", 0)
 }
 
+// Same as GetDepositUrl, but requires specifying the value of the deposit via
+// requestedCurrency and requestedAmount
+//
+// unlike GetDepositUrl, referenceId must be specified
+//
+// Set the markupPercantage to adjust the exchange-rate for a markup/discount
 func (ap *AkashicPay) GetDepositUrlWithRequestedValue(identifier string, referenceId string, receiveCurrencies []CryptoCurrency, redirectUrl string, requestedCurrency Currency, requestedAmount string, markupPercentage float64) (string, error) {
 	if referenceId == "" {
 		return "", errors.New("referenceId may not be zero-valued")
@@ -255,10 +286,20 @@ func (ap *AkashicPay) GetDepositUrlWithRequestedValue(identifier string, referen
 	return ap.getDepositUrlFunc(identifier, referenceId, receiveCurrencies, redirectUrl, requestedCurrency, requestedAmount, markupPercentage)
 }
 
+// GetDepositAddress returns an L1-address on the specified network for a user
+// to deposit into
+//
+// referenceId is a parameter used to identify the order, can be left out ("")
 func (ap *AkashicPay) GetDepositAddress(network NetworkSymbol, identifier string, referenceId string) (IDepositAddress, error) {
 	return ap.getDepositAddressFunc(network, identifier, referenceId, "", "", "", 0)
 }
 
+// Same as GetDepositAddress, but requires specifying the value of the deposit via
+// requestedCurrency and requestedAmount
+//
+// unlike GetDepositUrl, referenceId must be specified
+//
+// Set the markupPercantage to adjust the exchange-rate for a markup/discount
 func (ap *AkashicPay) GetDepositAddressWithRequestedValue(network NetworkSymbol, identifier string, referenceId string, requestedCurrency Currency, requestedAmount string, token TokenSymbol, markupPercentage float64) (IDepositAddress, error) {
 	if referenceId == "" {
 		return IDepositAddress{}, errors.New("referenceId may not be zero-valued")
@@ -272,6 +313,8 @@ func (ap *AkashicPay) GetDepositAddressWithRequestedValue(network NetworkSymbol,
 	return ap.getDepositAddressFunc(network, identifier, referenceId, token, requestedCurrency, requestedAmount, markupPercentage)
 }
 
+// GetExchangeRates return the exchange rates for all supported main-net coins
+// in the value of the requested currency
 func (ap *AkashicPay) GetExchangeRates(requestedCurrency Currency) (IGetExchangeRatesResult, error) {
 	if requestedCurrency == "" {
 		return IGetExchangeRatesResult{}, errors.New("requestedCurrency may not be zero-valued")
@@ -279,6 +322,8 @@ func (ap *AkashicPay) GetExchangeRates(requestedCurrency Currency) (IGetExchange
 	return getExchangeRates(ap.akashicUrl, requestedCurrency)
 }
 
+// LookForL2Address checks which L2-address an alias or L1-address belongs to.
+// Or call with an L2-address to verify it exists
 func (ap *AkashicPay) LookForL2Address(aliasOrL1OrL2Address string, network NetworkSymbol) (ILookForL2AddressResponse, error) {
 	if aliasOrL1OrL2Address == "" {
 		return ILookForL2AddressResponse{}, errors.New("aliasOrL1OrL2Address may not be zero-valued")
@@ -286,6 +331,9 @@ func (ap *AkashicPay) LookForL2Address(aliasOrL1OrL2Address string, network Netw
 	return getL2Lookup(ap.akashicUrl, aliasOrL1OrL2Address, network)
 }
 
+// Get all or a subset of transactions.
+//
+// Specify Page and Limit for pagination
 func (ap *AkashicPay) GetTransfers(getTransactionParams IGetTransactions) ([]ITransaction, error) {
 	validLimits := map[int]bool{0: true, 10: true, 25: true, 50: true, 100: true}
 	if !validLimits[getTransactionParams.Limit] {
@@ -294,6 +342,9 @@ func (ap *AkashicPay) GetTransfers(getTransactionParams IGetTransactions) ([]ITr
 	return getTransfers(ap.akashicUrl, ap.otk.Identity, getTransactionParams)
 }
 
+// GetTransactionDetails returns details about an individual transactions
+//
+// Returns an empty interface if no transaction found
 func (ap *AkashicPay) GetTransactionDetails(l2Hash string) (ITransaction, error) {
 	if l2Hash == "" {
 		return ITransaction{}, errors.New("l2Hash may not be zero-valued")
