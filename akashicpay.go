@@ -5,7 +5,10 @@
 package akashicpay
 
 import (
+	"crypto/hmac"
+	"crypto/sha256"
 	"encoding/base64"
+	"encoding/hex"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -356,6 +359,44 @@ func (ap *AkashicPay) GetTransactionDetails(l2Hash string) (ITransaction, error)
 // Returns a map from currencies to a list of networks supported for that currency
 func (ap *AkashicPay) GetSupportedCurrencies() (map[CryptoCurrency][]NetworkSymbol, error) {
 	return getSupportedCurrencies(ap.akashicUrl)
+}
+
+// VerifySignature can be used to verify a callback has not been altered. You
+// must have initiated the SDK with your API-secret to do this
+//
+// Supply the callback-body as a string (`{"amount": "1", ...}`) and
+// the signature from the callback-header
+//
+// Returns true if valid, indicating the callback has not been altered
+func (ap *AkashicPay) VerifySignature(callback string, signature string) (bool, error) {
+	if ap.ApiSecret == "" {
+		return false, errors.New("apiSecret must be set if you want to verify a signature")
+	}
+	if !json.Valid([]byte(callback)) {
+		return false, errors.New("callback is not valid JSON")
+	}
+
+	// Unmarshal and marshal again to sort the JSON alphabetically
+	var i any
+	err := json.Unmarshal([]byte(callback), &i)
+	if err != nil {
+		return false, err
+	}
+
+	sortedMsg, err := json.Marshal(i)
+	if err != nil {
+		return false, err
+	}
+
+	mac := hmac.New(sha256.New, []byte(ap.ApiSecret))
+	_, err = mac.Write([]byte(sortedMsg))
+	if err != nil {
+		return false, err
+	}
+
+	expectedMAC := mac.Sum(nil)
+	hexEncodedMAC := hex.EncodeToString(expectedMAC)
+	return hexEncodedMAC == signature, nil
 }
 
 func chooseBestACNode(env Environment) (acNode, error) {
