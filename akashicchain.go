@@ -186,14 +186,14 @@ func l2Transaction(
 	toAddress string,
 	tokenSymbol TokenSymbol,
 	initiatedToNonL2 string,
-	identifier string,
+	referenceId string,
 	isFxBp bool,
 ) (acTransaction, error) {
 	DbIndex := 15
 	Contracts := acTestNetContracts
 	Token := acNativeCoin
 	Metadata := map[string]interface{}{
-		"identifier": identifier,
+		"referenceId": referenceId,
 	}
 
 	if env == Production {

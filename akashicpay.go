@@ -122,17 +122,16 @@ func (ap *AkashicPay) GetBalance() ([]Balance, error) {
 
 // Send a crypto-transaction
 //
-// recipientId is the userId or similar identifier of the user requesting the
-// payout
+// referenceId is the userId or similar identifier for identifying the transaction
 //
 // to is the L1 or L2 address of the receiver
 //
 // Supply a zero-valued token to send native coin ("")
 //
 // The return is the L2 hash of the transaction
-func (ap *AkashicPay) Payout(recipientId string, to string, amount string, network NetworkSymbol, token TokenSymbol) (string, error) {
-	if recipientId == "" {
-		return "", errors.New("recipientId may not be zero-valued")
+func (ap *AkashicPay) Payout(referenceId string, to string, amount string, network NetworkSymbol, token TokenSymbol) (string, error) {
+	if referenceId == "" {
+		return "", errors.New("referenceId may not be zero-valued")
 	}
 	if to == "" {
 		return "", errors.New("to may not be zero-valued")
@@ -191,7 +190,7 @@ func (ap *AkashicPay) Payout(recipientId string, to string, amount string, netwo
 	// L2
 	if IsL2 {
 		acToken := mapUSDTToTether(network, token)
-		signedL2Tx, err := l2Transaction(ap.Env, ap.otk, network, DecimalAmount, ToAddress, acToken, InitiatedToNonL2, recipientId, ap.isFxBp)
+		signedL2Tx, err := l2Transaction(ap.Env, ap.otk, network, DecimalAmount, ToAddress, acToken, InitiatedToNonL2, referenceId, ap.isFxBp)
 		if err != nil {
 			return "", err
 		}
@@ -224,7 +223,7 @@ func (ap *AkashicPay) Payout(recipientId string, to string, amount string, netwo
 		Amount:                amount,
 		NetworkSymbol:         network,
 		TokenSymbol:           token,
-		Identifier:            recipientId,
+		ReferenceId:           referenceId,
 		Identity:              ap.otk.Identity,
 		FeeDelegationStrategy: ffeeDelegationDelegate,
 	}
