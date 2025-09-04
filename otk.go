@@ -9,7 +9,8 @@ import (
 	"github.com/btcsuite/btcd/btcec/v2"
 )
 
-const acPrivateKeyRegex = `^0x[a-f\d]{64}$`
+// private key could be 62 or 64 characters long despite being prefixed with 0x
+const acPrivateKeyRegex = `^0x[a-f\d]{62,64}$`
 
 type Otk struct {
 	privateKey string
