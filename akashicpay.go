@@ -232,7 +232,7 @@ func (ap *AkashicPay) Payout(referenceId string, to string, amount string, netwo
 	res, err := prepareL1Txn(ap.akashicUrl, Payload)
 
 	if err != nil {
-		if strings.Contains(err.Error(), "exceeds total savings") {
+		if strings.Contains(err.Error(), "savingsExceeded") {
 			return "", newAkashicError(AkashicErrorCodeSavingsExceeded, "")
 		}
 		return "", err
