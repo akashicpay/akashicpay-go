@@ -291,7 +291,8 @@ func assign(env Environment, otk Otk, ledgerId string, identifier string) (acTra
 			Contract:  contracts.AssignKey,
 			Input: map[string]interface{}{
 				"owner": map[string]interface{}{
-					"$stream": otk.Identity,
+					"$stream":  otk.Identity,
+					"$sigOnly": true,
 				},
 			},
 			Output: map[string]interface{}{
