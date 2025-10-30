@@ -99,3 +99,6 @@ var networkDictionary = map[NetworkSymbol]networkInfo{
 		},
 	},
 }
+
+// NonEthEvmNetworks represents non-Ethereum EVM networks
+var NonEthEvmNetworks = []NetworkSymbol{Binance_Smart_Chain_Mainnet, Binance_Smart_Chain_Testnet}

@@ -469,7 +469,7 @@ func (ap *AkashicPay) getDepositUrlFunc(identifier string, referenceId string, r
 	if err != nil {
 		return "", err
 	}
-	supportedCurrencies, err := getSupportedCurrencies(ap.akashicUrl)
+	preseedNetworks, err := ap.getPreseedNetworks();
 	if err != nil {
 		return "", err
 	}
@@ -480,16 +480,20 @@ func (ap *AkashicPay) getDepositUrlFunc(identifier string, referenceId string, r
 		existingSymbols[key.CoinSymbol] = true
 	}
 
-	// get deposit addresses for unique symbols that are not already owned
-	for _, networkSymbols := range supportedCurrencies {
-		for _, networkSymbol := range networkSymbols {
-			if _, exists := existingSymbols[networkSymbol]; !exists {
-				_, err := ap.GetDepositAddress(networkSymbol, identifier, "")
-				existingSymbols[networkSymbol] = true
-				if err != nil {
-					return "", err
-				}
-			}
+	// collect unassigned networks from supported networks
+	var unassignedNetworks []NetworkSymbol
+	for _, networkSymbol := range preseedNetworks {
+		if _, exists := existingSymbols[networkSymbol]; !exists {
+			unassignedNetworks = append(unassignedNetworks, networkSymbol)
+			existingSymbols[networkSymbol] = true
+		}
+	}
+
+	// bulk create or assign keys for unassigned networks
+	if len(unassignedNetworks) > 0 {
+		err := ap.bulkCreateOrAssignKeys(unassignedNetworks, identifier)
+		if err != nil {
+			return "", err
 		}
 	}
 
@@ -538,6 +542,94 @@ func (ap *AkashicPay) getDepositUrlFunc(identifier string, referenceId string, r
 	return fmt.Sprintf("%v/sdk/deposit?%v", ap.akashicPayUrl, params.Encode()), nil
 }
 
+// createKey creates a new key on the specified network for the given identifier
+// Returns the newly created key response
+func (ap *AkashicPay) createKey(network NetworkSymbol, identifier string) (iKeyCreationResponse, error) {
+	// Create a new key
+	tx, err := keyCreateTransaction(ap.Env, network, ap.otk)
+	if err != nil {
+		return iKeyCreationResponse{}, err
+	}
+
+	createKeyRes, err := post[activeLedgerResponse[iKeyCreationResponse, any]](ap.TargetNode.Node, tx)
+	if err != nil {
+		return iKeyCreationResponse{}, err
+	}
+	acErr := checkForAkashicChainError(createKeyRes)
+	if acErr != nil {
+		return iKeyCreationResponse{}, acErr
+	}
+	newKey := createKeyRes.Responses[0]
+
+	// Execute differential consensus transaction
+	diffConTx, err := differentialConsensusTransaction(ap.Env, ap.otk, newKey, identifier)
+	if err != nil {
+		return iKeyCreationResponse{}, err
+	}
+
+	diffConTxResp, err := post[activeLedgerResponse[any, any]](ap.TargetNode.Node, diffConTx)
+	if err != nil {
+		return iKeyCreationResponse{}, err
+	}
+	acError := checkForAkashicChainError(diffConTxResp)
+	if acError != nil {
+		return iKeyCreationResponse{}, acError
+	}
+
+	return newKey, nil
+}
+
+// bulkCreateOrAssignKeys creates or assigns keys for multiple networks for a given identifier
+// This function processes multiple networks and either creates new keys or assigns existing unassigned keys
+func (ap *AkashicPay) bulkCreateOrAssignKeys(networks []NetworkSymbol, identifier string) error {
+	var unassignedLedgerIds []string
+
+	// Iterate through each network to check for existing keys or create new ones
+	for _, network := range networks {
+		response, err := getByOwnerAndIdentifier(ap.akashicUrl, network, identifier, ap.otk.Identity)
+		if err != nil {
+			return err
+		}
+
+		if response.UnassignedLedgerId != "" {
+			// Collect unassigned ledger IDs for bulk assignment
+			unassignedLedgerIds = append(unassignedLedgerIds, response.UnassignedLedgerId)
+		} else if response.Address == "" && response.UnassignedLedgerId == "" {
+			// If both do not exist, create new key and continue
+			_, err := ap.createKey(network, identifier)
+			if err != nil {
+				return err
+			}
+		}
+	}
+
+	// If there are unassigned ledger IDs, assign them in bulk
+	if len(unassignedLedgerIds) > 0 {
+		tx, err := assign(ap.Env, ap.otk, unassignedLedgerIds, identifier)
+		if err != nil {
+			return err
+		}
+
+		// Assign keys to the user
+		acRes, err := post[activeLedgerResponse[[]iKeyCreationResponse, any]](ap.TargetNode.Node, tx)
+		if err != nil {
+			return err
+		}
+
+		acErr := checkForAkashicChainError(acRes)
+		if acErr != nil {
+			return acErr
+		}
+
+		// Check if assignment was successful
+		if len(acRes.Responses) == 0 {
+			return newAkashicError(AkashicErrorCodeUnknownError, "Failed to assign keys for identifier "+identifier)
+		}
+	}
+
+	return nil
+}
+
 func (ap *AkashicPay) getDepositAddressFunc(network NetworkSymbol, identifier string, referenceId string, token TokenSymbol, requestedCurrency Currency, requestedAmount string, markupPercentage float64) (IDepositAddress, error) {
 	// Check environment and network compatibility
 	if (ap.Env == Development && (network == Ethereum_Mainnet || network == Tron)) ||
@@ -556,7 +648,7 @@ func (ap *AkashicPay) getDepositAddressFunc(network NetworkSymbol, identifier st
 	}
 	if response.Address != "" {
 		if response.UnassignedLedgerId != "" {
-			tx, err := assign(ap.Env, ap.otk, response.UnassignedLedgerId, identifier)
+			tx, err := assign(ap.Env, ap.otk, []string{response.UnassignedLedgerId}, identifier)
 			if err != nil {
 				return IDepositAddress{}, err
 			}
@@ -598,33 +690,9 @@ func (ap *AkashicPay) getDepositAddressFunc(network NetworkSymbol, identifier st
 	}
 
 	// If no address found, create a new key
-	tx, err := keyCreateTransaction(ap.Env, network, ap.otk)
+	newKey, err := ap.createKey(network, identifier)
 	if err != nil {
 		return IDepositAddress{}, err
-	}
-
-	createKeyRes, err := post[activeLedgerResponse[iKeyCreationResponse, any]](ap.TargetNode.Node, tx)
-	if err != nil {
-		return IDepositAddress{}, err
-	}
-	acErr := checkForAkashicChainError(createKeyRes)
-	if acErr != nil {
-		return IDepositAddress{}, acErr
-	}
-	newKey := createKeyRes.Responses[0]
-
-	diffConTx, err := differentialConsensusTransaction(ap.Env, ap.otk, newKey, identifier)
-	if err != nil {
-		return IDepositAddress{}, err
-	}
-
-	diffConTxResp, err := post[activeLedgerResponse[any, any]](ap.TargetNode.Node, diffConTx)
-	if err != nil {
-		return IDepositAddress{}, err
-	}
-	acError := checkForAkashicChainError(diffConTxResp)
-	if acError != nil {
-		return IDepositAddress{}, acError
 	}
 
 	// If referenceId is provided, create a deposit order with new key address
@@ -682,4 +750,35 @@ func (ap *AkashicPay) createDepositPayloadAndOrder(referenceId string, identifie
 	createOrderPayload := payload
 	createOrderPayload.Signature = signature
 	return createDepositOrder(ap.akashicUrl, createOrderPayload)
+}
+
+// getPreseedNetworks returns a list of networks that need to create key or assign preseed keys
+func (ap *AkashicPay) getPreseedNetworks() ([]NetworkSymbol, error) {
+	supportedCurrencies, err := getSupportedCurrencies(ap.akashicUrl)
+	if err != nil {
+		return nil, err
+	}
+
+	duplicatedSymbols := make(map[NetworkSymbol]bool)
+	var preseedNetworks []NetworkSymbol
+	// flatten all supported networks and deduplicate
+	for _, networkSymbols := range supportedCurrencies {
+		for _, networkSymbol := range networkSymbols {
+			if _, duplicated := duplicatedSymbols[networkSymbol]; !duplicated {
+				// Only add to preseedNetworks if networkSymbol is NOT in NonEthEvmNetworks
+				isNonEthEvm := false
+				for _, nonEthEvmNetwork := range NonEthEvmNetworks {
+					if networkSymbol == nonEthEvmNetwork {
+						isNonEthEvm = true
+						break
+					}
+				}
+				if !isNonEthEvm {
+					preseedNetworks = append(preseedNetworks, networkSymbol)
+				}
+				duplicatedSymbols[networkSymbol] = true
+			}
+		}
+	}
+	return preseedNetworks, nil
 }

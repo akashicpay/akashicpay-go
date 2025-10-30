@@ -3,6 +3,7 @@ package akashicpay
 import (
 	"encoding/hex"
 	"encoding/json"
+	"fmt"
 	"slices"
 	"strings"
 	"time"
@@ -276,13 +277,21 @@ func checkForAkashicChainError[T any](response activeLedgerResponse[T, any]) err
 }
 
 // AssignKeyTransaction creates and signs a transaction to assign a key to a user identifier
-func assign(env Environment, otk Otk, ledgerId string, identifier string) (acTransaction, error) {
+func assign(env Environment, otk Otk, ledgerIds []string, identifier string) (acTransaction, error) {
 	contracts := acTestNetContracts
 	dbIndex := 15
 
 	if env == Production {
 		contracts = acMainNetContracts
 		dbIndex = 0
+	}
+
+	keys := make(map[string]interface{})
+	for i, ledgerId := range ledgerIds {
+		keyName := fmt.Sprintf("key%d", i+1)
+		keys[keyName] = map[string]interface{}{
+			"$stream": ledgerId,
+		}
 	}
 
 	TxBody := acTransaction{
@@ -295,11 +304,7 @@ func assign(env Environment, otk Otk, ledgerId string, identifier string) (acTra
 					"$sigOnly": true,
 				},
 			},
-			Output: map[string]interface{}{
-				"key": map[string]interface{}{
-					"$stream": ledgerId,
-				},
-			},
+			Output:   keys,
 			Metadata: map[string]interface{}{
 				"identifier": identifier,
 			},
