@@ -10,6 +10,7 @@ type Currency string
 // Fiat- and Crypto-currencies for setting amounts in deposit-orders
 const (
 	CurrencyUSDT Currency = "USDT"
+	CurrencyUSDC Currency = "USDC"
 	CurrencyTRX  Currency = "TRX"
 	CurrencyETH  Currency = "ETH"
 	CurrencyBNB  Currency = "BNB"

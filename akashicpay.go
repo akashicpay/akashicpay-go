@@ -43,12 +43,14 @@ const (
 // Tokens supported by AkashicPay
 const (
 	USDT   TokenSymbol = "USDT"
+	USDC   TokenSymbol = "USDC"
 	tether TokenSymbol = "Tether"
 )
 
 // Currencies supported by AkashicPay, includes native coins and tokens
 const (
 	CryptoUSDT CryptoCurrency = "USDT"
+	CryptoUSDC CryptoCurrency = "USDC"
 	CryptoTRX  CryptoCurrency = "TRX"
 	CryptoETH  CryptoCurrency = "ETH"
 	CryptoSEP  CryptoCurrency = "SEP"
