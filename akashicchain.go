@@ -99,6 +99,8 @@ func getACSymbol(coinSymbol NetworkSymbol) string {
 		return "eth"
 	case Binance_Smart_Chain_Mainnet, Binance_Smart_Chain_Testnet:
 		return "bnb"
+	case Solana, Solana_Devnet:
+		return "sol"
 	default:
 		return string(coinSymbol)
 	}
@@ -119,6 +121,10 @@ func getACNetwork(coinSymbol NetworkSymbol) string {
 		return "trx"
 	case Tron_Shasta:
 		return "shasta"
+	case Solana:
+		return "sol"
+	case Solana_Devnet:
+		return "soldev"
 	default:
 		return string(coinSymbol)
 	}

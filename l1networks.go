@@ -98,6 +98,38 @@ var networkDictionary = map[NetworkSymbol]networkInfo{
 			},
 		},
 	},
+	Solana: {
+		AddressRegex:  `^[1-9A-HJ-NP-Za-km-z]{32,44}$`,
+		NativeDecimal: 9,
+		Tokens: []token{
+			{
+				Decimal:  6,
+				Symbol:   USDT,
+				Contract: "Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB",
+			},
+			{
+				Decimal:  6,
+				Symbol:   USDC,
+				Contract: "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+			},
+		},
+	},
+	Solana_Devnet: {
+		AddressRegex:  `^[1-9A-HJ-NP-Za-km-z]{32,44}$`,
+		NativeDecimal: 9,
+		Tokens: []token{
+			{
+				Decimal:  6,
+				Symbol:   USDT,
+				Contract: "6krZNyyrvgN1XdvLVZwoAY4UvZxgiYVLtJwLYt43GHym",
+			},
+			{
+				Decimal:  6,
+				Symbol:   USDC,
+				Contract: "7gZkdXQcNzfw4eDJvgN4XuPxBnsf2AyRnjga4XQ7ber8",
+			},
+		},
+	},
 }
 
 // NonEthEvmNetworks represents non-Ethereum EVM networks

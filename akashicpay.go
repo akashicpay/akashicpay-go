@@ -38,6 +38,8 @@ const (
 	Ethereum_Sepolia            NetworkSymbol = "SEP"
 	Binance_Smart_Chain_Mainnet NetworkSymbol = "BNB"
 	Binance_Smart_Chain_Testnet NetworkSymbol = "tBNB"
+	Solana                      NetworkSymbol = "SOL"
+	Solana_Devnet               NetworkSymbol = "SOLDEV"
 )
 
 // Tokens supported by AkashicPay
@@ -469,7 +471,7 @@ func (ap *AkashicPay) getDepositUrlFunc(identifier string, referenceId string, r
 	if err != nil {
 		return "", err
 	}
-	preseedNetworks, err := ap.getPreseedNetworks();
+	preseedNetworks, err := ap.getPreseedNetworks()
 	if err != nil {
 		return "", err
 	}

@@ -14,6 +14,7 @@ const (
 	CurrencyTRX  Currency = "TRX"
 	CurrencyETH  Currency = "ETH"
 	CurrencyBNB  Currency = "BNB"
+	CurrencySOL  Currency = "SOL"
 
 	CurrencyCHF Currency = "CHF"
 	CurrencyCNY Currency = "CNY"
