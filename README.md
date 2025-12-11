@@ -60,7 +60,7 @@ AkashicPay is now fully setup and ready to use.
 
 You can also use AkashicPay with the AkashicChain Testnet & **Sepolia**
 (Ethereum) and **Shasta** (Tron) testnets, useful for local development and
-staging environments.
+preprod environments.
 To do this, follow the same procedure as above but make sure you use _testnet_
 versions of AkashicLink and [AkashicPay](https://testnet.akashicpay.com). Make
 sure you use the development environment in the SDK:
