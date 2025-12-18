@@ -16,6 +16,7 @@ const (
 	AkashicErrorCodeSavingsExceeded            AkashicErrorCode = "FUNDS_EXCEEDED"
 	AkashicErrorCodeAssignmentFailed           AkashicErrorCode = "ASSIGNMENT_FAILED"
 	AkashicErrorCodeNetworkEnvironmentMismatch AkashicErrorCode = "NETWORK_ENVIRONMENT_MISMATCH"
+	AkashicErrorCodeDecimalLimitExceeded       AkashicErrorCode = "TOKEN_DECIMAL_LIMIT_EXCEEDED"
 )
 
 var akashicErrorDetail = map[AkashicErrorCode]string{
@@ -30,6 +31,7 @@ var akashicErrorDetail = map[AkashicErrorCode]string{
 	AkashicErrorCodeSavingsExceeded:            "transaction amount exceeds total savings",
 	AkashicErrorCodeAssignmentFailed:           "failed to assign wallet. Please try again",
 	AkashicErrorCodeNetworkEnvironmentMismatch: "the L1-network does not match the SDK-environment",
+	AkashicErrorCodeDecimalLimitExceeded:       "the amount exceeds the allowed decimal limit for this currency",
 }
 
 // Custom error that implements the `error` interface

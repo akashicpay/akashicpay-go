@@ -2,7 +2,9 @@ package akashicpay
 
 import (
 	"errors"
+	"fmt"
 	"math/big"
+	"strings"
 )
 
 type Currency string
@@ -76,4 +78,34 @@ func getConversionFactor(coinSymbol NetworkSymbol, tokenSymbol TokenSymbol) (int
 		return -1, errors.New("coin not supported")
 	}
 	return token.Decimal, nil
+}
+
+func validateDecimalPlaces(amount string, network NetworkSymbol, token TokenSymbol) error {
+	if !strings.Contains(amount, ".") {
+		return nil
+	}
+
+	var maxDecimals = 6
+	if token != "" {
+		for _, t := range networkDictionary[network].Tokens {
+			if t.Symbol == token {
+				maxDecimals = t.Decimal
+				break
+			}
+		}
+	} else {
+		maxDecimals = networkDictionary[network].NativeDecimal
+
+	}
+
+	decimalPlaces := len(strings.Split(amount, ".")[1])
+
+	if decimalPlaces > maxDecimals {
+		return newAkashicError(
+			AkashicErrorCodeDecimalLimitExceeded,
+			fmt.Sprintf("Amount exceeds maximum of %d decimal places for this currency", maxDecimals),
+		)
+	}
+
+	return nil
 }

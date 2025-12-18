@@ -148,6 +148,11 @@ func (ap *AkashicPay) Payout(referenceId string, to string, amount string, netwo
 	if network == "" {
 		return "", errors.New("network may not be zero-valued")
 	}
+
+	if err := validateDecimalPlaces(amount, network, token); err != nil {
+		return "", err
+	}
+
 	ToAddress := to
 	InitiatedToNonL2 := ""
 	IsL2 := false
