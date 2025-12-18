@@ -18,7 +18,7 @@ const currentBranch = getBranchName();
 
 module.exports = {
   extends: 'semantic-release-monorepo',
-  branches: ['main', 'preprod', 'staging'],
+  branches: ['main', 'staging'],
   repositoryUrl: 'https://gitlab.com/dreamsai/cpg-2/HeliumPay-monorepo',
   tagFormat: getTagFormat(currentBranch),
   plugins: [
