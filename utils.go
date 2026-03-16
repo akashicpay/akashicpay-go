@@ -15,11 +15,17 @@ const (
 	akashicPayBaseUrl    string = "https://www.akashicpay.com"
 )
 
+const (
+	akashicPayApiBaseUrlDev string = "https://api.testnet.akashicpay.com/api"
+	akashicPayApiBaseUrl    string = "https://api.akashicpay.com/api"
+)
+
 const l2RegexWithOptionalPrefix = `^(AS)?[A-Fa-f\d]{64}$`
 
 type sdkUrls struct {
 	AkashicUrl    string
 	AkashicPayUrl string
+	AkashicPayApiUrl string
 }
 
 func getUrls(environment Environment) sdkUrls {
@@ -27,12 +33,14 @@ func getUrls(environment Environment) sdkUrls {
 		return sdkUrls{
 			AkashicUrl:    akashicBaseUrlDev,
 			AkashicPayUrl: akashicPayBaseUrlDev,
+			AkashicPayApiUrl: akashicPayApiBaseUrlDev,
 		}
 	}
 
 	return sdkUrls{
 		AkashicUrl:    akashicBaseUrl,
 		AkashicPayUrl: akashicPayBaseUrl,
+		AkashicPayApiUrl: akashicPayApiBaseUrl,
 	}
 }
 

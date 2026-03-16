@@ -66,6 +66,7 @@ type AkashicPay struct {
 	otk           Otk
 	akashicUrl    string
 	akashicPayUrl string
+	akashicPayApiUrl string
 }
 
 type Balance struct {
@@ -105,6 +106,7 @@ func NewAkashicPay(privateKey string, identity string, env Environment, apiSecre
 		isFxBp:        isBp.IsFxBp,
 		akashicUrl:    urls.AkashicUrl,
 		akashicPayUrl: urls.AkashicPayUrl,
+		akashicPayApiUrl: urls.AkashicPayApiUrl,
 	}, nil
 }
 
@@ -342,7 +344,7 @@ func (ap *AkashicPay) LookForL2Address(aliasOrL1OrL2Address string, network Netw
 	if aliasOrL1OrL2Address == "" {
 		return ILookForL2AddressResponse{}, errors.New("aliasOrL1OrL2Address may not be zero-valued")
 	}
-	return getL2Lookup(ap.akashicUrl, aliasOrL1OrL2Address, network)
+	return getL2Lookup(ap.akashicPayApiUrl, aliasOrL1OrL2Address, network)
 }
 
 // Get all or a subset of transactions.
@@ -472,7 +474,7 @@ func (ap *AkashicPay) getDepositUrlFunc(identifier string, referenceId string, r
 	if identifier == "" {
 		return "", errors.New("identifier may not be zero-valued")
 	}
-	keys, err := getKeysByOwnerAndIdentifier(ap.akashicUrl, ap.otk.Identity, identifier)
+	keys, err := getKeysByOwnerAndIdentifier(ap.akashicPayApiUrl, ap.otk.Identity, identifier)
 	if err != nil {
 		return "", err
 	}
@@ -526,7 +528,7 @@ func (ap *AkashicPay) getDepositUrlFunc(identifier string, referenceId string, r
 		}
 		payload.Signature = signature
 		// create a deposit order
-		_, err = createDepositOrder(ap.akashicUrl, payload)
+		_, err = createDepositOrder(ap.akashicPayApiUrl, payload)
 		if err != nil {
 			return "", err
 		}
@@ -593,7 +595,7 @@ func (ap *AkashicPay) bulkCreateOrAssignKeys(networks []NetworkSymbol, identifie
 
 	// Iterate through each network to check for existing keys or create new ones
 	for _, network := range networks {
-		response, err := getByOwnerAndIdentifier(ap.akashicUrl, network, identifier, ap.otk.Identity)
+		response, err := getByOwnerAndIdentifier(ap.akashicPayApiUrl, network, identifier, ap.otk.Identity)
 		if err != nil {
 			return err
 		}
@@ -756,7 +758,7 @@ func (ap *AkashicPay) createDepositPayloadAndOrder(referenceId string, identifie
 	}
 	createOrderPayload := payload
 	createOrderPayload.Signature = signature
-	return createDepositOrder(ap.akashicUrl, createOrderPayload)
+	return createDepositOrder(ap.akashicPayApiUrl, createOrderPayload)
 }
 
 // getPreseedNetworks returns a list of networks that need to create key or assign preseed keys
