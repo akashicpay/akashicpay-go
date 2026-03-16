@@ -59,13 +59,13 @@ const (
 )
 
 type AkashicPay struct {
-	TargetNode    acNode
-	Env           Environment
-	ApiSecret     string
-	isFxBp        bool
-	otk           Otk
-	akashicUrl    string
-	akashicPayUrl string
+	TargetNode       acNode
+	Env              Environment
+	ApiSecret        string
+	isFxBp           bool
+	otk              Otk
+	akashicUrl       string
+	akashicPayUrl    string
 	akashicPayApiUrl string
 }
 
@@ -99,13 +99,13 @@ func NewAkashicPay(privateKey string, identity string, env Environment, apiSecre
 	}
 
 	return &AkashicPay{
-		TargetNode:    fastestNode,
-		Env:           env,
-		ApiSecret:     apiSecret,
-		otk:           otk,
-		isFxBp:        isBp.IsFxBp,
-		akashicUrl:    urls.AkashicUrl,
-		akashicPayUrl: urls.AkashicPayUrl,
+		TargetNode:       fastestNode,
+		Env:              env,
+		ApiSecret:        apiSecret,
+		otk:              otk,
+		isFxBp:           isBp.IsFxBp,
+		akashicUrl:       urls.AkashicUrl,
+		akashicPayUrl:    urls.AkashicPayUrl,
 		akashicPayApiUrl: urls.AkashicPayApiUrl,
 	}, nil
 }
@@ -344,7 +344,7 @@ func (ap *AkashicPay) LookForL2Address(aliasOrL1OrL2Address string, network Netw
 	if aliasOrL1OrL2Address == "" {
 		return ILookForL2AddressResponse{}, errors.New("aliasOrL1OrL2Address may not be zero-valued")
 	}
-	return getL2Lookup(ap.akashicPayApiUrl, aliasOrL1OrL2Address, network)
+	return getL2Lookup(ap.akashicUrl, aliasOrL1OrL2Address, network)
 }
 
 // Get all or a subset of transactions.
@@ -595,7 +595,7 @@ func (ap *AkashicPay) bulkCreateOrAssignKeys(networks []NetworkSymbol, identifie
 
 	// Iterate through each network to check for existing keys or create new ones
 	for _, network := range networks {
-		response, err := getByOwnerAndIdentifier(ap.akashicPayApiUrl, network, identifier, ap.otk.Identity)
+		response, err := getByOwnerAndIdentifier(ap.akashicUrl, network, identifier, ap.otk.Identity)
 		if err != nil {
 			return err
 		}
