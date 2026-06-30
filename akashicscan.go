@@ -127,6 +127,10 @@ func getL2Lookup(baseUrl string, l2AddressOrAlias string, network NetworkSymbol)
 		)
 	}
 	l2Lookup, err := get[ILookForL2AddressResponse](url)
+
+	if strings.Contains(err.Error(), "connection refused") {
+		return ILookForL2AddressResponse{}, nil
+	}
 	return l2Lookup, err
 }
 

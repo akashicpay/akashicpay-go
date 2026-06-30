@@ -190,6 +190,58 @@ func keyCreateTransaction(env Environment, coinSymbol NetworkSymbol, otk Otk) (a
 	return signTransaction(TxBody, otk)
 }
 
+// Create an L1 transaction
+func l1Transaction(
+	env Environment,
+	identity string,
+	coinSymbol NetworkSymbol,
+	amount string,
+	toAddress string,
+	tokenSymbol TokenSymbol,
+	referenceId string,
+) acTransaction {
+	DbIndex := 15
+	Contracts := acTestNetContracts
+	Token := acNativeCoin
+	Metadata := map[string]interface{}{
+		"referenceId": referenceId,
+	}
+
+	if env == Production {
+		DbIndex = 0
+		Contracts = acMainNetContracts
+	}
+
+	if tokenSymbol != "" {
+		Token = string(tokenSymbol)
+	}
+
+	Input := map[string]interface{}{
+		"owner": map[string]interface{}{
+			"$stream":   identity,
+			"network":   coinSymbol,
+			"token":     Token,
+			"amount":    amount,
+			"to":        toAddress,
+			"delegated": true,
+		},
+	}
+
+	TxBody := acTransaction{
+		TxObject: txObject{
+			Namespace: acNamespace,
+			Contract:  Contracts.CryptoTransfer,
+			Entry:     "presign",
+			Input:     Input,
+			DbIndex:   DbIndex,
+			Metadata:  Metadata,
+		},
+		Signature: map[string]interface{}{},
+	}
+	addExpireToTx(&TxBody)
+	return TxBody
+}
+
 // Create and Sign an L2 transaction
 func l2Transaction(
 	env Environment,
@@ -310,7 +362,7 @@ func assign(env Environment, otk Otk, ledgerIds []string, identifier string) (ac
 					"$sigOnly": true,
 				},
 			},
-			Output:   keys,
+			Output: keys,
 			Metadata: map[string]interface{}{
 				"identifier": identifier,
 			},

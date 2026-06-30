@@ -240,16 +240,22 @@ func (ap *AkashicPay) Payout(referenceId string, to string, amount string, netwo
 		Identity:              ap.otk.Identity,
 		FeeDelegationStrategy: ffeeDelegationDelegate,
 	}
+
 	res, err := prepareL1Txn(ap.akashicUrl, Payload)
+
+	PreparedTxn := res.PreparedTxn
 
 	if err != nil {
 		if strings.Contains(err.Error(), "savingsExceeded") {
 			return "", newAkashicError(AkashicErrorCodeSavingsExceeded, "")
+		} else if strings.Contains(err.Error(), "connection refused") {
+			PreparedTxn = l1Transaction(ap.Env, ap.otk.Identity, network, amount, to, token, referenceId)
+		} else {
+			return "", err
 		}
-		return "", err
 	}
 
-	SignedTxn, err := signTransaction(res.PreparedTxn, ap.otk)
+	SignedTxn, err := signTransaction(PreparedTxn, ap.otk)
 
 	if err != nil {
 		return "", err
