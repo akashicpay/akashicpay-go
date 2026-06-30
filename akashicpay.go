@@ -593,19 +593,18 @@ func (ap *AkashicPay) createKey(network NetworkSymbol, identifier string) (iKeyC
 func (ap *AkashicPay) bulkCreateOrAssignKeys(networks []NetworkSymbol, identifier string) error {
 	var unassignedLedgerIds []string
 
-	// Iterate through each network to check for existing keys or create new ones
-	for _, network := range networks {
-		response, err := getByOwnerAndIdentifier(ap.akashicUrl, network, identifier, ap.otk.Identity)
-		if err != nil {
-			return err
-		}
+	keys, err := getByOwnerAndIdentifierKeys(ap.akashicUrl, networks, identifier, ap.otk.Identity)
+	if err != nil {
+		return err
+	}
 
-		if response.UnassignedLedgerId != "" {
+	for _, key := range keys {
+		if key.UnassignedLedgerId != "" {
 			// Collect unassigned ledger IDs for bulk assignment
-			unassignedLedgerIds = append(unassignedLedgerIds, response.UnassignedLedgerId)
-		} else if response.Address == "" && response.UnassignedLedgerId == "" {
+			unassignedLedgerIds = append(unassignedLedgerIds, key.UnassignedLedgerId)
+		} else if key.Address == "" && key.UnassignedLedgerId == "" {
 			// If both do not exist, create new key and continue
-			_, err := ap.createKey(network, identifier)
+			_, err := ap.createKey(key.Network, identifier)
 			if err != nil {
 				return err
 			}
@@ -655,6 +654,7 @@ func (ap *AkashicPay) getDepositAddressFunc(network NetworkSymbol, identifier st
 	if err != nil {
 		return IDepositAddress{}, err
 	}
+	
 	if response.Address != "" {
 		if response.UnassignedLedgerId != "" {
 			tx, err := assign(ap.Env, ap.otk, []string{response.UnassignedLedgerId}, identifier)

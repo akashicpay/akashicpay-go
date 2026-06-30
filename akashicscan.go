@@ -85,6 +85,7 @@ const (
 	ownerBalanceEndpoint        = "/v0/owner/details"
 	transactionsDetailsEndpoint = "/v0/transactions/transfer"
 	identifierLookupEndpoint    = "/v0/key/bp-deposit-key"
+	identifierLookupsEndpoint    = "/v0/key/bp-deposit-keys"
 	allKeysOfIdentifierEndpoint = "/v0/key/all-bp-deposit-keys"
 	supportedCurrenciesEndpoint = "/v1/config/supported-currencies"
 	createDepositOrderEndpoint  = "/v0/deposit-request"
@@ -230,6 +231,22 @@ func getByOwnerAndIdentifier(baseUrl string, coinSymbol NetworkSymbol, identifie
 		coinSymbol,
 	)
 	return get[iGetByOwnerAndIdentifierResponse](url)
+}
+
+func getByOwnerAndIdentifierKeys(baseUrl string, coinSymbols []NetworkSymbol, identifier string, identity string) ([]iGetByOwnerAndIdentifierKeysResponse, error) {
+	params := url.Values{}
+	params.Set("identity", identity)
+	params.Set("identifier", identifier)
+	params.Set("usePreSeed", "true")
+	for _, coinSymbol := range coinSymbols {
+		params.Add("coinSymbols", string(coinSymbol))
+	}
+	url := fmt.Sprintf("%v%v?%v",
+		baseUrl,
+		identifierLookupsEndpoint,
+		params.Encode(),
+	)
+	return get[[]iGetByOwnerAndIdentifierKeysResponse](url)
 }
 
 func createDepositOrder(baseUrl string, payload iCreateDepositOrder) (iCreateDepositOrderResponse, error) {

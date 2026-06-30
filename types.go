@@ -95,9 +95,16 @@ type IDepositAddress struct {
 }
 
 type iGetByOwnerAndIdentifierResponse struct {
-	Address            string `json:"address,omitempty"`
-	UnassignedLedgerId string `json:"unassignedLedgerId,omitempty"`
+	Address            string        `json:"address,omitempty"`
+	UnassignedLedgerId string        `json:"unassignedLedgerId,omitempty"`
 }
+
+type iGetByOwnerAndIdentifierKeysResponse struct {
+	Network           NetworkSymbol `json:"network"`
+	Address            string        `json:"address,omitempty"`
+	UnassignedLedgerId string        `json:"unassignedLedgerId,omitempty"`
+}
+
 type iRequestedValue struct {
 	Currency Currency `json:"currency,omitempty"`
 	Amount   string   `json:"amount,omitempty"`
