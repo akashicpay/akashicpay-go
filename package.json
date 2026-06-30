@@ -1,3 +1,8 @@
 {
-  "name": "@akashicpay/go-sdk"
+  "name": "@akashicpay/go-sdk",
+  "private": true,
+  "scripts": {
+    "build": "go mod download && go mod verify && go build -v ./...",
+    "lint": "bash scripts/lint-go-sdk.sh"
+  }
 }
