@@ -44,9 +44,8 @@ const (
 
 // Tokens supported by AkashicPay
 const (
-	USDT   TokenSymbol = "USDT"
-	USDC   TokenSymbol = "USDC"
-	tether TokenSymbol = "Tether"
+	USDT TokenSymbol = "USDT"
+	USDC TokenSymbol = "USDC"
 )
 
 // Currencies supported by AkashicPay, includes native coins and tokens
@@ -660,7 +659,7 @@ func (ap *AkashicPay) getDepositAddressFunc(network NetworkSymbol, identifier st
 	if err != nil {
 		return IDepositAddress{}, err
 	}
-	
+
 	if response.Address != "" {
 		if response.UnassignedLedgerId != "" {
 			tx, err := assign(ap.Env, ap.otk, []string{response.UnassignedLedgerId}, identifier)

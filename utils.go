@@ -23,23 +23,23 @@ const (
 const l2RegexWithOptionalPrefix = `^(AS)?[A-Fa-f\d]{64}$`
 
 type sdkUrls struct {
-	AkashicUrl    string
-	AkashicPayUrl string
+	AkashicUrl       string
+	AkashicPayUrl    string
 	AkashicPayApiUrl string
 }
 
 func getUrls(environment Environment) sdkUrls {
 	if environment == Development {
 		return sdkUrls{
-			AkashicUrl:    akashicBaseUrlDev,
-			AkashicPayUrl: akashicPayBaseUrlDev,
+			AkashicUrl:       akashicBaseUrlDev,
+			AkashicPayUrl:    akashicPayBaseUrlDev,
 			AkashicPayApiUrl: akashicPayApiBaseUrlDev,
 		}
 	}
 
 	return sdkUrls{
-		AkashicUrl:    akashicBaseUrl,
-		AkashicPayUrl: akashicPayBaseUrl,
+		AkashicUrl:       akashicBaseUrl,
+		AkashicPayUrl:    akashicPayBaseUrl,
 		AkashicPayApiUrl: akashicPayApiBaseUrl,
 	}
 }
@@ -80,7 +80,7 @@ func networkSliceToStringSlice(networks []NetworkSymbol) []string {
 // maps USDT to TETHER for Tron Shasta, returns nil if token is empty
 func mapUSDTToTether(network NetworkSymbol, token TokenSymbol) TokenSymbol {
 	if network == Tron_Shasta && token == USDT {
-		return tether
+		return TokenSymbol("Tether")
 	}
 	return token
 }
