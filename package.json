@@ -4,5 +4,8 @@
   "scripts": {
     "build": "go mod download && go mod verify && go build -v ./...",
     "lint": "bash scripts/lint-go-sdk.sh"
+  },
+  "devDependencies": {
+    "@shared/semantic-release": "workspace:*"
   }
 }
